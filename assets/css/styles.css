@@ -663,7 +663,15 @@ a.ms:hover { background: var(--surface-2); }
    Tablas de datos
    ------------------------------------------------------------------------- */
 .table-card { overflow: hidden; }
-.table-wrap { position: relative; overflow-x: auto; }
+.table-wrap { position: relative; overflow-x: auto;
+  /* sombras de desplazamiento horizontal: solo aparecen cuando la tabla no cabe */
+  background:
+    linear-gradient(to right, var(--surface) 35%, rgba(255, 255, 255, 0)) left center / 44px 100% no-repeat local,
+    linear-gradient(to left, var(--surface) 35%, rgba(255, 255, 255, 0)) right center / 44px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(36, 40, 36, .14), rgba(36, 40, 36, 0)) left center / 14px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(36, 40, 36, .14), rgba(36, 40, 36, 0)) right center / 14px 100% no-repeat scroll;
+  background-color: var(--surface); }
+.table-wrap:focus-visible { outline: 2px solid var(--olive); outline-offset: -2px; }
 .dtable { font-size: 13.5px; }
 .dtable th { text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); border-bottom: 1px solid var(--line); white-space: nowrap; }
 .dtable td { padding: 13px 16px; border-bottom: 1px solid var(--line-2); vertical-align: middle; }
@@ -672,6 +680,8 @@ a.ms:hover { background: var(--surface-2); }
 .dtable tbody tr:last-child td { border-bottom: 0; }
 .dtable .r { text-align: right; white-space: nowrap; }
 .dtable .nowrap { white-space: nowrap; }
+.dtable .col-progress { min-width: 150px; }
+.dtable .col-progress .bar { flex: 1; min-width: 56px; }
 .dtable tr.is-highlight { animation: highlight 2.4s var(--ease); }
 @keyframes highlight { 0%, 30% { background: var(--olive-25); } 100% { background: transparent; } }
 .dtable tfoot td { font-weight: 650; background: var(--surface-2); border-top: 1px solid var(--line); border-bottom: 0; }
@@ -901,6 +911,26 @@ dialog::backdrop { background: rgba(28, 31, 27, .38); backdrop-filter: blur(3px)
 /* ---------------------------------------------------------------------------
    Responsive
    ------------------------------------------------------------------------- */
+/* Tablas más compactas en portátiles y proyectores (de 721 a 1599 px) */
+@media (min-width: 721px) and (max-width: 1599px) {
+  .dtable th { padding: 11px 10px; letter-spacing: .05em; white-space: normal; }
+  .dtable td { padding: 12px 10px; }
+  .dtable th:first-child, .dtable td:first-child { padding-left: 16px; }
+  .dtable th:last-child, .dtable td:last-child { padding-right: 16px; }
+  .dtable .col-progress { min-width: 108px; }
+  .dtable .person small, .dtable .obra-chip > span { white-space: normal; }
+  .dtable .obra-chip > span > strong { white-space: nowrap; }
+  .dtable .cell-note { display: block; min-width: 108px; }
+}
+@media (min-width: 721px) and (max-width: 1365px) {
+  .dtable .hide-lg { display: none; }
+}
+@media (min-width: 721px) and (max-width: 1279px) {
+  .dtable th, .dtable td { padding-left: 8px; padding-right: 8px; }
+  .dtable th:first-child, .dtable td:first-child { padding-left: 14px; }
+  .dtable th:last-child, .dtable td:last-child { padding-right: 14px; }
+  .dtable .hide-md { display: none; }
+}
 @media (max-width: 1360px) {
   .pgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .rtypes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -915,6 +945,9 @@ dialog::backdrop { background: rgba(28, 31, 27, .38); backdrop-filter: blur(3px)
   .row--inc { grid-template-columns: minmax(0, 1fr) 140px 112px; }
   .row--inc .row__aside--owner { display: none; }
   .ekpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 1100px) {
+  .two-col { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 1023px) {
   .app { grid-template-columns: minmax(0, 1fr); }
