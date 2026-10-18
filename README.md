@@ -96,6 +96,7 @@ Comprobación desde Windows (PowerShell): `Resolve-DnsName adolfo-perez.adventum
 - **Logotipo:** `assets/brand/logo-adolfo-perez.png` (fondo transparente). Si se sustituye, mantener el nombre o actualizar `COMPANY.logo` en `assets/js/data.js`.
 - **Usuaria de la demo:** `USER` en `assets/js/data.js` (nombre y rol).
 - **Obras, equipo, partes, incidencias y documentos:** `assets/js/data.js`. Los indicadores se recalculan solos.
+- **Actualizaciones:** al cambiar CSS o JS, cambia el valor `?v=` de las referencias en `index.html` (por ejemplo, la fecha) para que los navegadores no sirvan la versión anterior desde su caché (GitHub Pages la guarda 10 minutos).
 
 ---
 
