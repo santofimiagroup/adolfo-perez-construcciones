@@ -457,7 +457,7 @@ input[type="range"] { width: 100%; accent-color: var(--olive); }
 .ai-list { display: grid; gap: 6px; }
 .ai-list li { position: relative; padding-left: 16px; }
 .ai-list li::before { content: ""; position: absolute; left: 3px; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: var(--sand); box-shadow: 0 0 0 1px rgba(111, 91, 62, .25); }
-.ai-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+.ai-table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
 .ai-table { font-size: 13px; }
 .ai-table th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 9px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line); white-space: nowrap; }
 .ai-table td { padding: 9px 12px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
@@ -633,7 +633,7 @@ a.kpi:hover { transform: translateY(-2px); box-shadow: 0 1px 2px rgba(36, 40, 36
 .progress-band__eco .fact strong { font-size: 16px; }
 .scurve text { font-family: var(--sans); font-size: 10.5px; fill: var(--muted); }
 
-.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 34px 0 22px; overflow-x: auto; scrollbar-width: none; }
+.tabs { position: relative; display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 34px 0 22px; overflow-x: auto; scrollbar-width: none; }
 .tabs::-webkit-scrollbar { display: none; }
 .tab { position: relative; height: 44px; padding: 0 14px; border: 0; background: transparent; font-size: 14px; font-weight: 550; color: var(--muted); white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
 .tab:hover { color: var(--ink); }
@@ -663,7 +663,7 @@ a.ms:hover { background: var(--surface-2); }
    Tablas de datos
    ------------------------------------------------------------------------- */
 .table-card { overflow: hidden; }
-.table-wrap { overflow-x: auto; }
+.table-wrap { position: relative; overflow-x: auto; }
 .dtable { font-size: 13.5px; }
 .dtable th { text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); border-bottom: 1px solid var(--line); white-space: nowrap; }
 .dtable td { padding: 13px 16px; border-bottom: 1px solid var(--line-2); vertical-align: middle; }
@@ -743,7 +743,7 @@ a.ms:hover { background: var(--surface-2); }
 /* ---------------------------------------------------------------------------
    Fichajes
    ------------------------------------------------------------------------- */
-.days { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; margin-bottom: 18px; scrollbar-width: thin; }
+.days { position: relative; display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; margin-bottom: 18px; scrollbar-width: thin; }
 .day { position: relative; flex: none; min-width: 62px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); text-align: center; line-height: 1.1; transition: border-color .18s, background .18s; }
 .day small { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .day b { display: block; font-family: var(--serif); font-weight: 400; font-size: 22px; margin-top: 3px; }
