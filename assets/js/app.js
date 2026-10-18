@@ -113,12 +113,33 @@
     const name = route.name === 'obra' ? (A.obraById(route.parts[1]) || {}).short || 'Obra' : view ? view.title : 'No encontrada';
     document.title = `${name} · ${A.COMPANY.name} (demo)`;
     if (view && view.mount) view.mount(route, opts);
+    syncScrollRegions();
     if (!opts.update) {
       window.scrollTo(0, 0);
       const h = main.querySelector('h1[tabindex="-1"]');
       if (h && APP.booted) h.focus({ preventScroll: true });
     }
   }
+  /* Tablas que no caben: región desplazable accesible con teclado (solo si no tienen ya elementos enfocables) */
+  function syncScrollRegions() {
+    main.querySelectorAll('.table-wrap').forEach(w => {
+      const scrolls = w.scrollWidth > w.clientWidth + 1;
+      const focusable = w.querySelector('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (scrolls && !focusable) {
+        if (!w.hasAttribute('tabindex')) {
+          const h = w.closest('section, .card');
+          const title = h && h.querySelector('h2, h3') ? h.querySelector('h2, h3').textContent.trim() : '';
+          w.setAttribute('tabindex', '0'); w.setAttribute('role', 'region');
+          w.setAttribute('aria-label', `${title ? `${title}: ` : ''}tabla con desplazamiento horizontal`);
+        }
+      } else if (w.getAttribute('role') === 'region') {
+        w.removeAttribute('tabindex'); w.removeAttribute('role'); w.removeAttribute('aria-label');
+      }
+    });
+  }
+  APP.syncScrollRegions = syncScrollRegions;
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(syncScrollRegions, 160); });
   function rerender() {
     const ae = document.activeElement;
     const id = ae && ae.id && main.contains(ae) ? ae.id : null;

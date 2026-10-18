@@ -50,12 +50,12 @@
   }
   function obrasTable(list) {
     return `<div class="card table-card"><div class="table-wrap"><table class="dtable dtable--stack">
-      <thead><tr><th scope="col">Obra</th><th scope="col">Jefe de obra</th><th scope="col">Avance</th><th scope="col" class="r">Previsto</th><th scope="col">Estado</th><th scope="col" class="r">Presupuesto</th><th scope="col" class="r">Desviación</th><th scope="col" class="r">Fin previsto</th><th scope="col" class="r">Incid.</th></tr></thead>
+      <thead><tr><th scope="col">Obra</th><th scope="col">Jefe de obra</th><th scope="col">Avance</th><th scope="col" class="r hide-lg">Previsto</th><th scope="col">Estado</th><th scope="col" class="r">Presupuesto</th><th scope="col" class="r">Desviación</th><th scope="col" class="r">Fin previsto</th><th scope="col" class="r">Incid.</th></tr></thead>
       <tbody>${list.map(({ o, m }) => `<tr>
         <td class="primary"><a href="#/obras/${o.id}" class="obra-chip"><img src="${o.photoSm}" alt="" style="object-position:${o.focus}"><span><strong>${esc(o.short)}</strong><br><small class="muted">${esc(o.town)} · ${o.code}</small></span></a></td>
         <td data-label="Jefe de obra">${U.person(o.jefe, '')}</td>
-        <td data-label="Avance" style="min-width:150px"><div style="display:flex;align-items:center;gap:10px">${U.progressBar(o, m)}<strong class="num">${o.progress}%</strong></div></td>
-        <td class="r hide-sm">${f.pct(m.planned)}</td>
+        <td data-label="Avance" class="col-progress"><div style="display:flex;align-items:center;gap:10px">${U.progressBar(o, m)}<strong class="num">${o.progress}%</strong></div></td>
+        <td class="r hide-sm hide-lg">${f.pct(m.planned)}</td>
         <td data-label="Estado">${U.obraPill(m)}</td>
         <td class="r" data-label="Presupuesto">${f.eurM(o.budget)}</td>
         <td class="r" data-label="Desviación" style="color:${m.devPct > 1 ? 'var(--warn-ink)' : 'var(--olive-ink)'};font-weight:600">${f.signedPct(m.devPct)}</td>
@@ -317,7 +317,7 @@
       <td data-label="Obra">${U.obraChip(fc.obra)}</td>
       <td data-label="Entrada" class="nowrap"><span style="display:inline-flex;align-items:center;gap:6px">${fc.in ? `<strong class="num">${f.time(fc.in)}</strong>${geo}` : '<span class="muted">—</span>'}</span></td>
       <td data-label="Salida" class="nowrap">${fc.out ? `<strong class="num">${f.time(fc.out)}</strong>` : live ? '<span class="muted">En curso</span>' : '<span class="muted">—</span>'}</td>
-      <td data-label="Horas" class="r nowrap">${h != null ? f.hours(h) : '—'}</td>
+      <td data-label="Horas" class="r nowrap hide-md">${h != null ? f.hours(h) : '—'}</td>
       <td data-label="Estado">${U.fichajePill(fc.status)}</td>
       <td class="hide-sm"><span class="cell-note">${esc(fc.note || (fc.origin && fc.status !== 'ausencia' ? fc.origin : ''))}</span></td>
       <td class="r">${needs ? `<button type="button" class="btn btn--secondary btn--xs" data-act="fichaje-resolve" data-id="${fc.id}">Resolver</button>` : ''}</td>
@@ -351,7 +351,7 @@
         ${!showDay && review.length ? `<button type="button" class="btn btn--secondary btn--sm" data-act="param" data-k="estado" data-v="revision">${icon('circle-alert', 15)}Ver todos los pendientes (${review.length})</button>` : ''}
       </div>
       ${list.length ? `<div class="card table-card"><div class="table-wrap"><table class="dtable dtable--stack">
-        <thead><tr><th scope="col">Persona</th>${showDay ? '<th scope="col">Día</th>' : ''}<th scope="col">Obra</th><th scope="col">Entrada</th><th scope="col">Salida</th><th scope="col" class="r">Horas</th><th scope="col">Estado</th><th scope="col">Observaciones</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead>
+        <thead><tr><th scope="col">Persona</th>${showDay ? '<th scope="col">Día</th>' : ''}<th scope="col">Obra</th><th scope="col">Entrada</th><th scope="col">Salida</th><th scope="col" class="r hide-md">Horas</th><th scope="col">Estado</th><th scope="col">Observaciones</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead>
         <tbody>${list.map(fc => fichajeRow(fc, showDay)).join('')}</tbody></table></div></div>` : U.empty({ ico: 'clock-4', title: p.estado === 'revision' ? 'No hay fichajes pendientes' : 'No hay registros con estos filtros', text: p.estado === 'revision' ? 'Todos los fichajes están revisados.' : 'Prueba con otro día, estado u obra.', action: `<button type="button" class="btn btn--secondary" data-act="clear-params">Quitar filtros</button>` })}
       <p class="method">${icon('shield-check', 15)}<span>Registro diario de jornada (art. 34.9 del Estatuto de los Trabajadores, conservación de 4 años). Cada corrección queda trazada: quién, cuándo y por qué. La ubicación solo se comprueba en el momento de fichar, sin seguimiento continuo (art. 90 LOPDGDD: la plantilla debe estar informada previamente). Fichajes ficticios; horas efectivas descontando 1 h de comida en jornada partida.</span></p>
       ${U.footer()}
