@@ -4,7 +4,7 @@ Demostración interactiva de un sistema de gestión a medida para **Adolfo Pére
 
 > **Entorno de demostración · Datos ficticios.** Todas las obras, personas, cifras, fotografías y ubicaciones son inventadas. No existe ninguna conexión con los sistemas de la empresa.
 
-URL prevista: **https://adolfo-perez.adventumstrategy.es**
+URL: **https://adolfo-perez.adventumstrategy.es**
 
 ---
 
@@ -66,24 +66,34 @@ No necesita instalación ni compilación. Para verla en local basta con abrir `i
 
 ---
 
-## Publicación en GitHub Pages
+## Publicación
 
-1. Crear el repositorio **público** `adolfo-perez-construcciones` en la cuenta `santofimiagroup` (GitHub Pages gratuito requiere repositorio público).
-2. Subir **el contenido** de esta carpeta a la raíz del repositorio (rama `main`), incluidos `CNAME` y `.nojekyll`.
-   - Desde la web: *Add file → Upload files* y arrastrar todos los archivos y la carpeta `assets`.
-3. *Settings → Pages → Build and deployment*: **Source = Deploy from a branch**, **Branch = main / (root)** → *Save*.
-4. En *Settings → Pages → Custom domain* debe aparecer `adolfo-perez.adventumstrategy.es` (lo toma del archivo `CNAME`; si no, escribirlo y pulsar *Save*).
-5. En **Hostinger (hPanel) → Dominios → adventumstrategy.es → DNS / Nameservers (editor de zona DNS)**, añadir **solo** este registro (no tocar los existentes). En «Nombre» va solo `adolfo-perez`; Hostinger añade el dominio:
+Publicada el 18 de octubre de 2026 y comprobada en navegador.
 
-   | Tipo | Nombre | Apunta a | TTL |
-   |---|---|---|---|
-   | CNAME | `adolfo-perez` | `santofimiagroup.github.io` | 14400 (el valor por defecto) |
+| Elemento | Configuración |
+|---|---|
+| Repositorio | `santofimiagroup/adolfo-perez-construcciones` (público), rama `main` |
+| GitHub Pages | *Deploy from a branch* → `main` / `(root)` |
+| Dominio | `adolfo-perez.adventumstrategy.es` (archivo `CNAME`) · *DNS check successful* |
+| DNS (Hostinger, zona `adventumstrategy.es`) | `CNAME` · `adolfo-perez` → `santofimiagroup.github.io` · TTL 14400. No se modificó ningún otro registro. |
+| HTTPS | Certificado emitido por GitHub · *Enforce HTTPS* activado (`http://` redirige a `https://`) |
 
-   Importante: el destino es `santofimiagroup.github.io`, **sin** el nombre del repositorio.
-6. Esperar la propagación (de minutos a 24 h). En *Settings → Pages* aparecerá «DNS check successful».
-7. Activar **Enforce HTTPS** cuando GitHub lo permita (puede tardar hasta 24 h en emitir el certificado).
+La dirección `santofimiagroup.github.io/adolfo-perez-construcciones/` redirige al dominio.
 
-Mientras tanto, la demo funciona en `https://santofimiagroup.github.io/adolfo-perez-construcciones/`.
+### Actualizar la demo
+
+1. Editar los archivos en local y revisarlos abriendo `index.html`.
+2. Si cambia CSS o JS, actualizar el valor `?v=` de las referencias en `index.html` (por ejemplo, con la fecha): GitHub Pages deja los archivos 10 minutos en la caché del navegador.
+3. En GitHub, entrar en la carpeta correspondiente → *Add file → Upload files* → arrastrar los archivos → *Commit changes*.
+4. En uno o dos minutos la acción *pages build and deployment* publica la nueva versión (pestaña *Actions*).
+
+### Rehacer la publicación desde cero (referencia)
+
+1. Repositorio **público** (GitHub Pages gratuito lo exige) con el contenido de esta carpeta en la raíz de `main`, incluidos `CNAME` y `.nojekyll`.
+2. *Settings → Pages*: *Deploy from a branch*, `main` / `(root)`.
+3. *Custom domain*: `adolfo-perez.adventumstrategy.es` → *Save*. Hacerlo **antes** de crear el registro DNS, para que nadie pueda reclamar el subdominio.
+4. Hostinger (hPanel) → *Dominios → adventumstrategy.es → DNS / Nameservers*: añadir **solo** `CNAME` · `adolfo-perez` · `santofimiagroup.github.io` (sin el nombre del repositorio). En «Nombre» va solo `adolfo-perez`.
+5. Cuando GitHub emita el certificado (de minutos a 24 h), activar *Enforce HTTPS*.
 
 **Recomendado:** verificar el dominio `adventumstrategy.es` en GitHub (*Settings de la cuenta → Pages → Add a domain*), que pide un registro TXT `_github-pages-challenge-santofimiagroup` en Hostinger. Protege los subdominios frente a apropiaciones si algún día se borra el repositorio. No usar registros DNS comodín (`*.adventumstrategy.es`).
 
@@ -96,7 +106,6 @@ Comprobación desde Windows (PowerShell): `Resolve-DnsName adolfo-perez.adventum
 - **Logotipo:** `assets/brand/logo-adolfo-perez.png` (fondo transparente). Si se sustituye, mantener el nombre o actualizar `COMPANY.logo` en `assets/js/data.js`.
 - **Usuaria de la demo:** `USER` en `assets/js/data.js` (nombre y rol).
 - **Obras, equipo, partes, incidencias y documentos:** `assets/js/data.js`. Los indicadores se recalculan solos.
-- **Actualizaciones:** al cambiar CSS o JS, cambia el valor `?v=` de las referencias en `index.html` (por ejemplo, la fecha) para que los navegadores no sirvan la versión anterior desde su caché (GitHub Pages la guarda 10 minutos).
 
 ---
 
