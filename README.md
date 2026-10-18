@@ -30,7 +30,14 @@ Responde con un **motor local de reglas** sobre los datos de la demo, incluidos 
 
 Ejemplos: «¿Qué obras están teniendo retrasos?», «¿Qué empleados no han fichado hoy?», «¿Qué jefe de obra tiene más incidencias pendientes?», «¿Cómo vamos de presupuesto este mes?», «Prepárame un resumen para la reunión de mañana».
 
-Las fechas se calculan respecto al día en que se abre la demo. En fin de semana se muestra la última jornada laborable.
+### Fecha y hora reales
+
+La demo muestra la fecha y la hora del momento de la visita (el reloj de la portada avanza solo) y calcula los datos respecto a ese momento:
+
+- Los fichajes aparecen a medida que avanza la jornada: entradas entre las 7:30 y las 8:30, salidas a partir de las 17:00 (viernes, desde las 14:00). La jornada se da por cerrada a las 18:15 (viernes, 15:15).
+- Antes de las 7:00 todavía no hay fichajes de hoy; tras el cierre, la jornada aparece completa.
+- En fines de semana y festivos de la Comunitat Valenciana se muestra la última jornada laborable. Incluye los festivos de 2026 (Decreto 100/2025, DOGV n.º 10145) y de 2027 (calendario aprobado por el Consell); las fiestas locales de cada municipio no.
+- Si la página se queda abierta y cambia la fase de la jornada o el día, aparece un aviso para actualizar los datos.
 
 ---
 
@@ -68,7 +75,7 @@ No necesita instalación ni compilación. Para verla en local basta con abrir `i
 
 ## Publicación
 
-Publicada el 18 de octubre de 2026 y comprobada en navegador.
+Publicada el 18 de octubre de 2026 y actualizada el 19 de octubre (lila del logotipo, Mari, fecha y hora reales). Comprobada en navegador.
 
 | Elemento | Configuración |
 |---|---|
@@ -104,7 +111,8 @@ Comprobación desde Windows (PowerShell): `Resolve-DnsName adolfo-perez.adventum
 ## Personalización rápida
 
 - **Logotipo:** `assets/brand/logo-adolfo-perez.png` (fondo transparente). Si se sustituye, mantener el nombre o actualizar `COMPANY.logo` en `assets/js/data.js`.
-- **Usuaria de la demo:** `USER` en `assets/js/data.js` (nombre y rol).
+- **Usuaria de la demo:** `USER` en `assets/js/data.js` (ahora, Mari · Administración).
+- **Color de acento:** lila exacto del logotipo, `#B9A1BB`, en la variable `--accent` de `assets/css/styles.css`. Las variantes oscuras (`--accent-ink`, `--accent-700`) se usan solo donde el texto o los bordes necesitan contraste suficiente.
 - **Obras, equipo, partes, incidencias y documentos:** `assets/js/data.js`. Los indicadores se recalculan solos.
 
 ---
