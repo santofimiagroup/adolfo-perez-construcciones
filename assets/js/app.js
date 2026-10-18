@@ -76,6 +76,7 @@
         <p><strong style="color:var(--ink)">Plataforma de operaciones para ${esc(A.COMPANY.name)}.</strong> Es una demostración interactiva de cómo podría funcionar un sistema a medida que centralice obras, equipos, fichajes, partes, incidencias, costes y documentación. Ha sido diseñada por ADVENTUM Strategy como herramienta de trabajo para validar necesidades; no es una solución definitiva.</p>
         <div class="callout callout--warn">${icon('circle-alert', 16)}<span><strong>Datos ficticios.</strong> Las obras, personas, cifras, fotografías y ubicaciones son de demostración. No hay ninguna conexión con los sistemas de la empresa.</span></div>
         <ul class="ai-list">
+          <li>La fecha y la hora son las reales. Los datos se calculan respecto al momento de la visita: los fichajes aparecen según avanza la jornada (de 7:00 a 17:30; los viernes, hasta las 14:30), y en fines de semana y festivos de la Comunitat Valenciana se muestra la última jornada laborable.</li>
           <li>Los cambios que hagas (incidencias, partes, fichajes, avances, documentos) se guardan solo en este navegador y puedes restablecerlos desde el menú de usuario.</li>
           <li>El asistente responde con reglas locales sobre los datos de la demo. En una versión real se conectaría a un modelo de IA a través de un servidor seguro, con permisos por usuario.</li>
           <li>La exportación CSV genera archivos reales; los informes se pueden imprimir o guardar en PDF.</li>
@@ -201,6 +202,29 @@
   });
   window.addEventListener('hashchange', () => { closeNav(); render(); });
   window.addEventListener('storage', e => { if (e.key && e.key.startsWith('apc-demo')) { A.load(); APP.refresh(); } });
+
+  /* ---------- reloj: fecha y hora reales mientras la página está abierta ---------- */
+  const phaseAt = d => {
+    if (!A.isWorkday(d)) return 'libre';
+    const m = d.getHours() * 60 + d.getMinutes();
+    const close = d.getDay() === 5 ? 15 * 60 + 15 : 18 * 60 + 15;
+    return m < 7 * 60 ? 'antes' : m < close ? 'jornada' : 'cerrada';
+  };
+  let staleShown = false;
+  function tick() {
+    const now = new Date();
+    $$('[data-clock]').forEach(el => { const t = f.time(now); if (el.textContent !== t) { el.textContent = t; el.setAttribute('datetime', now.toISOString()); } });
+    $$('[data-clock-date]').forEach(el => { const d = f.dayLong(now).toUpperCase(); if (el.textContent !== d) el.textContent = d; });
+    if (APP.isoWeek) $$('[data-clock-week]').forEach(el => { const w = `Semana ${APP.isoWeek(now)}`; if (el.textContent !== w) el.textContent = w; });
+    if (APP.greeting) $$('[data-greeting]').forEach(el => { const g = APP.greeting(now); if (el.textContent !== g) el.textContent = g; });
+    // los datos se calculan al abrir la página: si cambia el día o la fase de la jornada, se ofrece actualizarlos
+    if (!staleShown && (!A.sameDay(now, A.TODAY) || phaseAt(now) !== A.PHASE)) {
+      staleShown = true;
+      U.toast('La jornada ha avanzado desde que abriste la demo.', { type: 'info', actionLabel: 'Actualizar datos', onAction: () => location.reload(), timeout: 600000 });
+    }
+  }
+  setInterval(tick, 15000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
 
   /* ---------- arranque ---------- */
   if (!location.hash || location.hash === '#' || location.hash === '#/') history.replaceState(null, '', '#/inicio');

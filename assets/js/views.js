@@ -30,7 +30,7 @@
   function obraCard({ o, m }) {
     const jefe = A.empById(o.jefe);
     const pts = n => `${f.num(n, 0)} ${Math.round(n) === 1 ? 'punto' : 'puntos'}`;
-    const gapTxt = m.gap > 3 ? `<span style="color:var(--danger-ink);font-weight:600">−${pts(m.gap)}</span>` : m.gap < -1 ? `<span style="color:var(--olive-ink);font-weight:600">+${pts(-m.gap)}</span>` : '<span>En línea con lo previsto</span>';
+    const gapTxt = m.gap > 3 ? `<span style="color:var(--danger-ink);font-weight:600">−${pts(m.gap)}</span>` : m.gap < -1 ? `<span style="color:var(--accent-ink);font-weight:600">+${pts(-m.gap)}</span>` : '<span>En línea con lo previsto</span>';
     return `<a class="ocard" href="#/obras/${o.id}">
       <div class="ocard__media">${U.photo(o, 'sm', '', `${o.name} (imagen de demostración)`)}<div class="ocard__badges">${m.phase && m.status === 'plazo' ? `<span class="pill pill--fase pill--plain">${m.phase}</span>` : U.obraPill(m)}<span class="code">${o.code}</span></div></div>
       <div class="ocard__body">
@@ -58,7 +58,7 @@
         <td class="r hide-sm hide-lg">${f.pct(m.planned)}</td>
         <td data-label="Estado">${U.obraPill(m)}</td>
         <td class="r" data-label="Presupuesto">${f.eurM(o.budget)}</td>
-        <td class="r" data-label="Desviación" style="color:${m.devPct > 1 ? 'var(--warn-ink)' : 'var(--olive-ink)'};font-weight:600">${f.signedPct(m.devPct)}</td>
+        <td class="r" data-label="Desviación" style="color:${m.devPct > 1 ? 'var(--warn-ink)' : 'var(--accent-ink)'};font-weight:600">${f.signedPct(m.devPct)}</td>
         <td class="r" data-label="Fin">${f.dayMed(o.end)}</td>
         <td class="r" data-label="Incidencias">${m.open.length}</td></tr>`).join('')}</tbody></table></div></div>`;
   }
@@ -81,7 +81,7 @@
   }
   APP.actions['obras-csv'] = () => {
     const { list } = obrasFiltered(APP.route.params);
-    U.downloadCSV(`obras_${A.iso(A.REF)}.csv`,
+    U.downloadCSV(`obras_${A.iso(A.TODAY)}.csv`,
       ['Código', 'Obra', 'Tipo', 'Municipio (ficticio)', 'Jefe de obra', 'Inicio', 'Fin previsto', 'Avance real (%)', 'Avance previsto (%)', 'Estado', 'Presupuesto (€)', 'Coste ejecutado (€)', 'Previsión al cierre (€)', 'Desviación (€)', 'Desviación (%)', 'Incidencias abiertas'],
       list.map(({ o, m }) => [o.code, o.name, o.type, o.town, A.empById(o.jefe).name, A.iso(o.start), A.iso(o.end), o.progress, U.csvNum(m.planned, 1), m.statusLabel, U.csvNum(o.budget, 0), U.csvNum(m.ac, 0), U.csvNum(m.eac, 0), U.csvNum(m.dev, 0), U.csvNum(m.devPct, 2), m.open.length]));
   };
@@ -99,7 +99,7 @@
     const gi = Math.min(Number(route.params.foto || 0), o.gallery.length - 1);
     const [gp, gcap] = o.gallery[gi];
     const counts = { partes: A.partes.filter(p => p.obra === o.id).length, incidencias: m.open.length, documentos: A.documentos.filter(d => d.obra === o.id).length, equipo: o.team.length };
-    const gapLine = m.gap > 3 ? `<span style="color:var(--danger-ink)">${f.num(m.gap, 0)} puntos por detrás de lo previsto · retraso estimado ${m.daysBehind >= 14 ? `${Math.round(m.daysBehind / 7)} semanas` : `${m.daysBehind} días`}</span>` : m.gap < -1 ? `<span style="color:var(--olive-ink)">${f.num(-m.gap, 0)} puntos por delante de lo previsto</span>` : `<span style="color:var(--olive-ink)">En línea con la planificación</span>`;
+    const gapLine = m.gap > 3 ? `<span style="color:var(--danger-ink)">${f.num(m.gap, 0)} puntos por detrás de lo previsto · retraso estimado ${m.daysBehind >= 14 ? `${Math.round(m.daysBehind / 7)} semanas` : `${m.daysBehind} días`}</span>` : m.gap < -1 ? `<span style="color:var(--accent-ink)">${f.num(-m.gap, 0)} puntos por delante de lo previsto</span>` : `<span style="color:var(--accent-ink)">En línea con la planificación</span>`;
     return `<div class="page">
       <header class="page-head" style="padding-bottom:8px">
         <div class="page-head__bar"><nav class="crumbs" aria-label="Ruta"><a href="#/inicio">${icon('house', 14)}<span class="sr-only">Inicio</span></a>${icon('chevron-right', 13)}<a href="#/obras">Obras</a>${icon('chevron-right', 13)}<span aria-current="page">${esc(o.short)}</span></nav><div class="page-head__tools">${U.utilityTools()}</div></div>
@@ -140,7 +140,7 @@
         <div class="progress-band__eco">
           <div class="fact"><span>Coste ejecutado</span><strong>${f.eurAuto(m.ac)}</strong></div>
           <div class="fact"><span>Previsión al cierre</span><strong>${f.eurAuto(m.eac)}</strong></div>
-          <div class="fact"><span>Desviación prevista</span><strong style="color:${m.dev > 0 ? 'var(--warn-ink)' : 'var(--olive-ink)'}">${f.signedEur(m.dev)} · ${f.signedPct(m.devPct)}</strong></div>
+          <div class="fact"><span>Desviación prevista</span><strong style="color:${m.dev > 0 ? 'var(--warn-ink)' : 'var(--accent-ink)'}">${f.signedEur(m.dev)} · ${f.signedPct(m.devPct)}</strong></div>
         </div>
       </section>
       <div class="tabs" role="tablist" aria-label="Secciones de la obra">${TABS.map(([k, l]) => `<a role="tab" class="tab" href="#/obras/${o.id}/${k}" aria-selected="${k === tab}" aria-controls="panel-${k}" id="tab-${k}">${l}${counts[k] != null ? ` <span class="count">${counts[k]}</span>` : ''}</a>`).join('')}</div>
@@ -173,7 +173,7 @@
       return `<div class="two-col">
         <section class="card table-card"><div class="card__head"><div><h2 class="card__title">Coste por capítulo</h2><p class="card__sub">Presupuesto, avance y coste real de cada capítulo</p></div></div>
           <div class="table-wrap"><table class="dtable dtable--stack"><thead><tr><th scope="col">Capítulo</th><th scope="col" class="r">Presupuesto</th><th scope="col" class="r">Avance</th><th scope="col" class="r">Coste real</th><th scope="col" class="r">Desviación</th></tr></thead>
-          <tbody>${ch.map(c => { const d = c.cost - c.ev; return `<tr><td class="primary"><strong>${esc(c.name)}</strong></td><td class="r" data-label="Presupuesto">${f.eur(Math.round(c.budget))}</td><td class="r" data-label="Avance">${c.progress} %</td><td class="r" data-label="Coste real">${c.cost ? f.eur(Math.round(c.cost)) : '—'}</td><td class="r" data-label="Desviación" style="font-weight:600;color:${d > 1000 ? 'var(--warn-ink)' : d < -1000 ? 'var(--olive-ink)' : 'var(--muted)'}">${Math.abs(d) < 500 ? '—' : f.signedEur(d)}</td></tr>`; }).join('')}</tbody>
+          <tbody>${ch.map(c => { const d = c.cost - c.ev; return `<tr><td class="primary"><strong>${esc(c.name)}</strong></td><td class="r" data-label="Presupuesto">${f.eur(Math.round(c.budget))}</td><td class="r" data-label="Avance">${c.progress} %</td><td class="r" data-label="Coste real">${c.cost ? f.eur(Math.round(c.cost)) : '—'}</td><td class="r" data-label="Desviación" style="font-weight:600;color:${d > 1000 ? 'var(--warn-ink)' : d < -1000 ? 'var(--accent-ink)' : 'var(--muted)'}">${Math.abs(d) < 500 ? '—' : f.signedEur(d)}</td></tr>`; }).join('')}</tbody>
           <tfoot><tr><td>Total obra</td><td class="r">${f.eur(Math.round(tot.b))}</td><td class="r">${o.progress} %</td><td class="r">${f.eur(Math.round(tot.c))}</td><td class="r">${f.signedEur(tot.c - tot.ev)}</td></tr></tfoot></table></div></section>
         <section class="card"><div class="card__head"><div><h2 class="card__title">Coste mensual</h2><p class="card__sub">Coste real (barras) frente a planificado (marca)</p></div></div><div class="card__body">${U.monthlyChart(A.monthlyCost(6, o.id), { h: 240 })}<div class="legend" style="margin-top:8px"><span><i class="sand" style="background:#C9C2B4"></i>Coste real</span><span><i class="line"></i>Planificado</span><span>* mes en curso</span></div></div></section>
       </div>
@@ -181,10 +181,10 @@
     }
     // resumen
     const ch = A.chaptersOf(o, m);
-    const next = o.milestones.filter(x => x.date >= A.REF);
+    const next = o.milestones.filter(x => x.date >= A.TODAY);
     return `<div class="two-col">
       <section class="card"><div class="card__head"><div><h2 class="card__title">Capítulos de obra</h2><p class="card__sub">Avance físico por capítulo (peso sobre el presupuesto)</p></div></div>
-        <div class="chapters">${ch.map(c => `<div class="chapter"><span>${esc(c.name)}<span class="w">${c.weight} %</span></span><div class="bar bar--thin"><i style="width:${c.progress}%;${c.progress >= 100 ? 'background:#8FA289' : ''}"></i></div><span class="num">${c.progress} %</span></div>`).join('')}</div></section>
+        <div class="chapters">${ch.map(c => `<div class="chapter"><span>${esc(c.name)}<span class="w">${c.weight} %</span></span><div class="bar bar--thin"><i style="width:${c.progress}%;${c.progress >= 100 ? 'background:var(--accent-700)' : ''}"></i></div><span class="num">${c.progress} %</span></div>`).join('')}</div></section>
       <div class="stack">
         <section class="card"><div class="card__head"><h2 class="card__title">Próximos hitos</h2></div>
           <div class="milestones">${next.length ? next.map(x => `<div class="ms"><span class="ms__date"><b>${x.date.getDate()}</b><small>${f.monthShort(x.date)}</small></span><span class="ms__text">${esc(x.label)}<small>${f.cap(f.weekday(x.date))} · dentro de ${A.daysBetween(A.REF, x.date)} días</small></span></div>`).join('') : '<p class="muted">Sin hitos pendientes.</p>'}</div></section>
@@ -226,13 +226,16 @@
   function todayRec(empId) { return A.todayFichajes().find(fc => fc.emp === empId); }
   function statusOf(empId) {
     const r = todayRec(empId);
-    if (!r) return ['sin', 'Sin registro'];
+    if (!r) return ['sin', A.PHASE === 'antes' || A.PHASE === 'jornada' ? 'Aún no ha fichado' : 'Sin registro'];
     if (r.status === 'ausencia') return ['ausencia', r.note.replace(/\.$/, '').split('(')[0].split(':')[0].trim()];
     if (!r.in) return ['sin', 'Sin fichar'];
-    if (r.status === 'revision') return ['revision', `Por revisar · ${f.time(r.in)}`];
+    const span = r.out ? `${f.time(r.in)}–${f.time(r.out)}` : f.time(r.in);
+    if (r.status === 'revision') return ['revision', `Por revisar · ${span}`];
+    if (r.status === 'pendiente') return ['revision', `Sin salida · ${f.time(r.in)}`];
+    if (r.out) return ['presente', `Jornada completa · ${span}`];
     return ['presente', `En ${r.obra === 'oficina' ? 'oficina' : 'obra'} · ${f.time(r.in)}`];
   }
-  function weekHours(empId) { return A.fichajes.filter(fc => fc.emp === empId && A.daysBetween(fc.date, A.REF) < 7).reduce((s, fc) => s + (A.hoursOf(fc) || 0), 0); }
+  function weekHours(empId) { return A.fichajes.filter(fc => fc.emp === empId && A.daysBetween(fc.date, A.TODAY) < 7).reduce((s, fc) => s + (A.hoursOf(fc) || 0), 0); }
   function personCard(e) {
     const [st, label] = statusOf(e.id);
     return `<button type="button" class="pcard" data-act="person" data-id="${e.id}">
@@ -252,7 +255,7 @@
     const p = route.params; const list = equipoFiltered(p); const t = A.totals();
     const catCount = c => A.EMPLEADOS.filter(e => e.cat === c).length;
     return `<div class="page">
-      ${U.pageHead({ crumbs: [{ label: 'Equipo' }], eyebrow: 'Operaciones', title: 'Equipo', sub: `<strong>${t.employees} personas</strong> en plantilla · ${t.present.length} han fichado ${A.IS_WEEKEND ? 'en la última jornada' : 'hoy'} · ${catCount('jefe')} jefes de obra y ${catCount('encargado')} encargados.`, actions: `<button type="button" class="btn btn--secondary" data-act="equipo-csv">${icon('download', 16)}Exportar CSV</button>` })}
+      ${U.pageHead({ crumbs: [{ label: 'Equipo' }], eyebrow: 'Operaciones', title: 'Equipo', sub: `<strong>${t.employees} personas</strong> en plantilla · ${A.PHASE === 'libre' ? `${t.worked.length} ficharon el ${A.DAYCTX.refName} (última jornada)` : A.PHASE === 'jornada' ? `${t.present.length} en obra ahora` : `${t.worked.length} han fichado hoy`} · ${catCount('jefe')} jefes de obra y ${catCount('encargado')} encargados.`, actions: `<button type="button" class="btn btn--secondary" data-act="equipo-csv">${icon('download', 16)}Exportar CSV</button>` })}
       <div class="toolbar">
         ${seg('cat', { label: 'Categoría', def: '', items: [{ v: '', label: 'Todos', count: t.employees }].concat(Object.entries(A.CATEGORIES).map(([k, l]) => ({ v: k, label: l, count: catCount(k) }))) }, p.cat || '')}
         ${selectParam('obra', 'Obra', obraOptions(), p.obra, 'f-obra')}
@@ -281,7 +284,7 @@
   APP.actions.person = el => openPerson(el.dataset.id);
   APP.actions['equipo-csv'] = () => {
     const list = equipoFiltered(APP.route.params);
-    U.downloadCSV(`equipo_${A.iso(A.REF)}.csv`, ['ID', 'Nombre', 'Puesto', 'Categoría', 'Obras asignadas', 'En la empresa desde', 'Estado del día', 'Horas últimos 7 días'],
+    U.downloadCSV(`equipo_${A.iso(A.TODAY)}.csv`, ['ID', 'Nombre', 'Puesto', 'Categoría', 'Obras asignadas', 'En la empresa desde', 'Estado del día', 'Horas últimos 7 días'],
       list.map(e => [e.id, e.name, e.role, A.CATEGORIES[e.cat], e.obras.map(i => A.obraById(i).short).join(', ') || (e.note || 'Oficina'), e.since, statusOf(e.id)[1], U.csvNum(weekHours(e.id), 2)]));
   };
   APP.views.equipo = { render: renderEquipo, title: 'Equipo', mount: route => { if (route.params.id) openPerson(route.params.id); } };
@@ -309,8 +312,8 @@
   function fichajeRow(fc, showDay) {
     const e = A.empById(fc.emp); const h = A.hoursOf(fc);
     const needs = fc.status === 'revision' || fc.status === 'pendiente';
-    const geo = fc.in ? (fc.geo === 'fuera' ? `<span title="Fuera de la geocerca de la obra" style="color:var(--danger-ink)">${icon('map-pin', 13)}</span>` : fc.geo === 'validado' ? `<span title="Validado por oficina" style="color:var(--olive)">${icon('circle-check', 13)}</span>` : `<span title="${esc(fc.origin)} · dentro de la geocerca" style="color:var(--muted-2)">${icon('map-pin', 13)}</span>`) : '';
-    const live = fc.status === 'presente' && !fc.out && A.sameDay(fc.date, A.REF);
+    const geo = fc.in ? (fc.geo === 'fuera' ? `<span title="Fuera de la geocerca de la obra" style="color:var(--danger-ink)">${icon('map-pin', 13)}</span>` : fc.geo === 'validado' ? `<span title="Validado por oficina" style="color:var(--accent-ink)">${icon('circle-check', 13)}</span>` : `<span title="${esc(fc.origin)} · dentro de la geocerca" style="color:var(--muted-2)">${icon('map-pin', 13)}</span>`) : '';
+    const live = fc.status !== 'pendiente' && !fc.out && fc.in && A.isLive(fc.date);
     return `<tr${fc._new ? ' class="is-highlight"' : ''}>
       <td class="primary">${U.person(fc.emp, e.role)}</td>
       ${showDay ? `<td data-label="Día" class="nowrap">${f.cap(f.weekdayShort(fc.date))}</td>` : ''}
@@ -323,33 +326,44 @@
       <td class="r">${needs ? `<button type="button" class="btn btn--secondary btn--xs" data-act="fichaje-resolve" data-id="${fc.id}">Resolver</button>` : ''}</td>
     </tr>`;
   }
+  /** Aviso del día operativo: antes del inicio de la jornada o en días sin jornada */
+  function dayNote(isToday, showDay, day) {
+    if (showDay) return '';
+    const DC = A.DAYCTX;
+    if (A.PHASE === 'libre' && day === A.iso(A.REF)) return `<div class="callout" style="margin-bottom:18px">${icon('calendar-days', 16)}<span>Hoy es ${esc(DC.off)}: no hay jornada. Se muestra la última jornada laborable, el <strong>${esc(DC.refName)}</strong>.</span></div>`;
+    if (isToday && A.PHASE === 'antes') return `<div class="callout" style="margin-bottom:18px">${icon('clock-4', 16)}<span>La jornada empieza a las <strong>${DC.start}</strong>. Por ahora solo constan las ausencias ya registradas para hoy.</span></div>`;
+    if (isToday && A.PHASE === 'jornada' && !A.fichajes.some(fc => fc.dateIso === day && fc.in)) return `<div class="callout" style="margin-bottom:18px">${icon('clock-4', 16)}<span>Todavía no ha fichado nadie hoy: la entrada habitual es entre las 7:30 y las 8:30.</span></div>`;
+    return '';
+  }
   function renderFichajes(route) {
     const p = route.params; const { day, list } = fichajesFiltered(p);
     const days = []; for (let n = 0; n < 10; n++) days.push(A.workday(-n));
     const dayRecs = A.fichajes.filter(fc => fc.dateIso === day);
-    const isToday = day === A.iso(A.REF);
+    const isToday = day === A.iso(A.TODAY);
+    const liveDay = isToday && (A.PHASE === 'jornada' || A.PHASE === 'antes');
     const cnt = s => dayRecs.filter(fc => s === 'presente' ? (fc.status === 'presente' || fc.status === 'cerrado') : fc.status === s).length;
     const review = A.reviewFichajes();
     const showDay = p.estado === 'revision';
     const dObj = days.find(d => A.iso(d) === day) || A.REF;
     const boxes = [
-      ['presente', isToday ? 'Presentes' : 'Jornadas completas', isToday ? 'Entrada registrada' : 'Entrada y salida'],
+      liveDay ? ['presente', 'Han fichado', A.PHASE === 'antes' ? `La jornada empieza a las ${A.DAYCTX.start}` : `${dayRecs.filter(fc => fc.status === 'presente' && !fc.out).length} siguen en obra`] : ['presente', 'Jornadas completas', 'Entrada y salida'],
       ['pendiente', 'Pendientes de salida', 'Falta fichar la salida'],
       ['ausencia', 'Ausencias registradas', 'Vacaciones y permisos'],
       ['revision', 'Revisión necesaria', 'Anomalías del día']
     ];
     return `<div class="page">
       ${U.pageHead({ crumbs: [{ label: 'Fichajes' }], eyebrow: 'Operaciones', title: 'Fichajes', sub: `Registro de entradas y salidas desde la app de obra y la tableta de oficina · <strong>${review.length} fichajes pendientes de revisión</strong>.`, actions: `<button type="button" class="btn btn--secondary" data-act="fichajes-csv">${icon('download', 16)}Exportar CSV</button><button type="button" class="btn btn--primary" data-act="fichaje-manual">${icon('plus', 16)}Registrar fichaje manual</button>` })}
-      <div class="days" role="group" aria-label="Día">${days.map(d => { const di = A.iso(d); const flag = A.fichajes.some(fc => fc.dateIso === di && (fc.status === 'revision' || fc.status === 'pendiente')); return `<button type="button" class="day" data-act="param" data-k="dia" data-v="${di === A.iso(A.REF) ? '' : di}" aria-pressed="${!showDay && di === day}"><small>${A.sameDay(d, A.REF) && !A.IS_WEEKEND ? 'Hoy' : f.cap(f.weekday(d)).slice(0, 3)}</small><b>${d.getDate()}</b><span class="sr-only">, ${esc(f.dayLong(d))}${flag ? ', con fichajes por revisar' : ''}</span>${flag ? '<span class="flag" aria-hidden="true"></span>' : ''}</button>`; }).join('')}</div>
+      <div class="days" role="group" aria-label="Día">${days.map(d => { const di = A.iso(d); const flag = A.fichajes.some(fc => fc.dateIso === di && (fc.status === 'revision' || fc.status === 'pendiente')); return `<button type="button" class="day" data-act="param" data-k="dia" data-v="${di === A.iso(A.REF) ? '' : di}" aria-pressed="${!showDay && di === day}"><small>${A.sameDay(d, A.TODAY) ? 'Hoy' : f.cap(f.weekday(d)).slice(0, 3)}</small><b>${d.getDate()}</b><span class="sr-only">, ${esc(f.dayLong(d))}${flag ? ', con fichajes por revisar' : ''}</span>${flag ? '<span class="flag" aria-hidden="true"></span>' : ''}</button>`; }).join('')}</div>
       ${showDay ? `<div class="callout callout--warn" style="margin-bottom:18px">${icon('circle-alert', 16)}<span>Mostrando los <strong>${list.length} fichajes pendientes de revisión</strong> de los últimos 10 días laborables. <button type="button" class="link" data-act="param" data-k="estado" data-v="" style="border:0;background:none;padding:0">Volver al día</button></span></div>` : `
       <div class="sumstrip" role="group" aria-label="Filtrar por estado · ${esc(f.dayLong(dObj))}">${boxes.map(([k, l, s]) => `<button type="button" class="sumbox" data-act="param" data-k="estado" data-v="${p.estado === k ? '' : k}" aria-pressed="${p.estado === k}"><b>${cnt(k)}</b><span><strong>${l}</strong>${s}</span></button>`).join('')}</div>`}
       <div class="toolbar">
         ${selectParam('obra', 'Obra', obraOptions('Todas las obras').concat([{ v: 'oficina', label: 'Oficina central' }]), p.obra, 'f-obra')}
         ${searchParam('f-q', 'Buscar persona', p.q)}
         <span class="toolbar__spacer"></span>
-        <span class="result-count">${list.length} registros${showDay ? '' : ` · ${f.dayLong(dObj)}`}</span>
+        <span class="result-count">${list.length} registros${showDay ? '' : ` · ${f.dayLong(dObj)}${liveDay ? ` · a las ${f.time(new Date())}` : ''}`}</span>
         ${!showDay && review.length ? `<button type="button" class="btn btn--secondary btn--sm" data-act="param" data-k="estado" data-v="revision">${icon('circle-alert', 15)}Ver todos los pendientes (${review.length})</button>` : ''}
       </div>
+      ${dayNote(isToday, showDay, day)}
       ${list.length ? `<div class="card table-card"><div class="table-wrap"><table class="dtable dtable--stack">
         <thead><tr><th scope="col">Persona</th>${showDay ? '<th scope="col">Día</th>' : ''}<th scope="col">Obra</th><th scope="col">Entrada</th><th scope="col">Salida</th><th scope="col" class="r hide-md">Horas</th><th scope="col">Estado</th><th scope="col">Observaciones</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead>
         <tbody>${list.map(fc => fichajeRow(fc, showDay)).join('')}</tbody></table></div></div>` : U.empty({ ico: 'clock-4', title: p.estado === 'revision' ? 'No hay fichajes pendientes' : 'No hay registros con estos filtros', text: p.estado === 'revision' ? 'Todos los fichajes están revisados.' : 'Prueba con otro día, estado u obra.', action: `<button type="button" class="btn btn--secondary" data-act="clear-params">Quitar filtros</button>` })}
@@ -390,6 +404,7 @@
         <label class="radio-card"><input type="radio" name="action" value="ausencia"><span><strong>Registrar una ausencia</strong><small>No ha acudido a la obra.</small></span></label></fieldset>
         <div class="form-grid" style="margin-top:14px">
           <div class="field" data-show="entrada"><label for="rs-in">Hora de entrada</label><input class="input" type="time" id="rs-in" name="in" value="07:30"></div>
+          ${A.isLive(fc.date) ? '' : `<div class="field" data-show="entrada"><label for="rs-out2">Hora de salida</label><input class="input" type="time" id="rs-out2" name="out" value="${fc.date.getDay() === 5 ? '14:30' : '17:30'}"></div>`}
           <div class="field" data-show="ausencia" hidden><label for="rs-reason">Motivo</label><select class="select" id="rs-reason" name="reason">${ABS_REASONS.map(r => `<option>${r}</option>`).join('')}</select></div>
           <div class="field span-2"><label for="rs-note">Observaciones<span class="req">*</span></label><input class="input" id="rs-note" name="note" placeholder="Ej.: avisado por el encargado a las 9:15" maxlength="120"></div>
         </div>`;
@@ -398,8 +413,17 @@
         const action = form.elements.action.value;
         if (action === 'entrada') {
           const [h, m] = (form.elements.in.value || '07:30').split(':').map(Number);
-          A.commit({ type: 'fichaje.resolve', id: fc.id, action: 'entrada', in: A.at(fc.date, h, m).toISOString(), note: form.elements.note.value.trim() });
-          U.toast(`Entrada de <strong>${esc(e.short)}</strong> registrada a las ${form.elements.in.value}.`);
+          const inAt = A.at(fc.date, h, m);
+          if (inAt > new Date()) { U.fieldError(form, 'in', 'La hora no puede ser posterior a la actual.'); return false; }
+          const outEl = form.elements.out; let outAt = null;
+          if (outEl && outEl.value) {
+            const [ho, mo] = outEl.value.split(':').map(Number); outAt = A.at(fc.date, ho, mo);
+            if (outAt <= inAt) { U.fieldError(form, 'out', 'La salida debe ser posterior a la entrada.'); return false; }
+            if (outAt > new Date()) { U.fieldError(form, 'out', 'La hora no puede ser posterior a la actual.'); return false; }
+          }
+          A.commit({ type: 'fichaje.resolve', id: fc.id, action: 'entrada', in: inAt.toISOString(), note: form.elements.note.value.trim() });
+          if (outAt) A.commit({ type: 'fichaje.resolve', id: fc.id, action: 'salida', out: outAt.toISOString(), note: form.elements.note.value.trim() });
+          U.toast(outAt ? `Jornada de <strong>${esc(e.short)}</strong> registrada (${form.elements.in.value}–${outEl.value}).` : `Entrada de <strong>${esc(e.short)}</strong> registrada a las ${form.elements.in.value}.`);
         } else {
           A.commit({ type: 'fichaje.resolve', id: fc.id, action: 'ausencia', note: `${form.elements.reason.value}: ${form.elements.note.value.trim()}` });
           U.toast(`Ausencia de <strong>${esc(e.short)}</strong> registrada.`);
@@ -434,16 +458,20 @@
       onSubmit: form => {
         const ok = U.validate(form, {
           emp: { required: true, requiredMsg: 'Selecciona la persona.' }, time: { required: true }, note: { required: true, min: 6 },
-          day: { custom: () => { const fc = A.fichajes.find(x => x.emp === form.elements.emp.value && x.dateIso === form.elements.day.value); const kind = form.elements.kind.value; if (!form.elements.emp.value) return ''; if (kind === 'salida' && (!fc || !fc.in)) return 'No hay una entrada registrada ese día para esta persona.'; return ''; } }
+          day: { custom: () => { const fc = A.fichajes.find(x => x.emp === form.elements.emp.value && x.dateIso === form.elements.day.value); const kind = form.elements.kind.value; if (!form.elements.emp.value) return ''; if (kind === 'salida' && (!fc || !fc.in)) return 'No hay una entrada registrada ese día para esta persona.'; if (kind === 'entrada' && fc && fc.status === 'ausencia') return 'Ese día tiene una ausencia registrada.'; return ''; } }
         });
         if (!ok) return false;
         const empId = form.elements.emp.value; const di = form.elements.day.value; const kind = form.elements.kind.value;
         const [h, m] = form.elements.time.value.split(':').map(Number);
-        const fc = A.fichajes.find(x => x.emp === empId && x.dateIso === di);
-        const when = A.at(fc.date, h, m);
-        if (kind === 'salida' && when <= fc.in) { U.fieldError(form, 'time', 'La salida debe ser posterior a la entrada.'); return false; }
-        A.commit(kind === 'entrada' ? { type: 'fichaje.resolve', id: fc.id, action: 'entrada', in: when.toISOString(), obra: form.elements.obra.value, note: form.elements.note.value.trim() } : { type: 'fichaje.resolve', id: fc.id, action: 'salida', out: when.toISOString(), note: form.elements.note.value.trim() });
-        fc._new = true; setTimeout(() => { fc._new = false; }, 3000);
+        const [yy, mo, dd] = di.split('-').map(Number);
+        const when = A.at(new Date(yy, mo - 1, dd), h, m);
+        if (when > new Date()) { U.fieldError(form, 'time', 'La hora no puede ser posterior a la actual.'); return false; }
+        const prev = A.fichajes.find(x => x.emp === empId && x.dateIso === di);
+        if (kind === 'salida' && when <= prev.in) { U.fieldError(form, 'time', 'La salida debe ser posterior a la entrada.'); return false; }
+        const id = prev ? prev.id : `${empId}@${di}`;
+        A.commit(kind === 'entrada' ? { type: 'fichaje.resolve', id, action: 'entrada', in: when.toISOString(), obra: form.elements.obra.value, note: form.elements.note.value.trim() } : { type: 'fichaje.resolve', id, action: 'salida', out: when.toISOString(), note: form.elements.note.value.trim() });
+        const fc = A.fichajes.find(x => x.id === id);
+        if (fc) { fc._new = true; setTimeout(() => { fc._new = false; }, 3000); }
         U.toast(`Fichaje de ${kind} de <strong>${esc(A.empById(empId).short)}</strong> registrado a las ${form.elements.time.value}.`);
         APP.setParams({ dia: di === A.iso(A.REF) ? null : di, estado: null });
       }

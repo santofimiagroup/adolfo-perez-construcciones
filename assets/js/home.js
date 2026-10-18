@@ -10,9 +10,23 @@
   const home = { featured: null };
   const AI = { messages: [], busy: false, rec: null, listening: false };
 
-  function greeting() {
-    const h = new Date().getHours();
+  function greeting(now = new Date()) {
+    const h = now.getHours();
     return h >= 6 && h < 14 ? 'Buenos días' : h >= 14 && h < 21 ? 'Buenas tardes' : 'Buenas noches';
+  }
+  APP.greeting = greeting;
+  /** Semana ISO de una fecha */
+  function isoWeek(ref) { const d = new Date(Date.UTC(ref.getFullYear(), ref.getMonth(), ref.getDate())); const day = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() + 4 - day); const y0 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); return Math.ceil(((d - y0) / 86400000 + 1) / 7); }
+  APP.isoWeek = isoWeek;
+  /** Textos del equipo según la fase de la jornada (fecha y hora reales) */
+  function teamTexts(t) {
+    const DC = A.DAYCTX;
+    switch (A.PHASE) {
+      case 'antes': return { kpi: 'Equipo en obra hoy', value: 0, ctx: `<span>La jornada empieza a las ${DC.start}</span>`, map: `La jornada empieza a las ${DC.start}`, pin: 'en obra' };
+      case 'jornada': return { kpi: 'Equipo en obra ahora', value: t.present.length, ctx: `<span>${t.absent.length} ausencias ·</span><span class="bad">${t.review.length} por revisar</span>`, map: 'Personas en cada obra en este momento', pin: 'en obra ahora' };
+      case 'cerrada': return { kpi: 'Equipo · jornada de hoy', value: t.worked.length, ctx: `<span>Jornada cerrada ·</span><span class="bad">${t.review.length} por revisar</span>`, map: 'Personas que han trabajado hoy en cada obra', pin: 'trabajaron hoy' };
+      default: return { kpi: 'Equipo · última jornada', value: t.worked.length, ctx: `<span>${f.cap(DC.refName)} ·</span><span class="bad">${t.review.length} por revisar</span>`, map: `Personas que trabajaron el ${DC.refName} en cada obra`, pin: `trabajaron el ${DC.refName}` };
+    }
   }
   function featuredOrder() { return A.totals().ms.slice().sort((a, b) => b.m.attention - a.m.attention).map(x => x.o); }
 
@@ -250,7 +264,7 @@
         <span class="kpi__ctx">${ctx}</span></a>`;
     return `<section class="kpis" aria-label="Indicadores principales">
       ${card('#/obras', 'building', 'Obras activas', t.obras, `<span class="warn">${t.attention.length} requieren atención</span>`, U.progressColumns(t.ms.map(x => ({ v: x.o.progress, s: x.m.status }))), 'Avance de cada obra')}
-      ${card('#/fichajes', 'users', 'Equipo en obra hoy', `${t.present.length}<small> / ${t.employees}</small>`, `<span>${t.absent.length} ausencias ·</span><span class="bad">${t.review.length} por revisar</span>`, U.sparkBars(pres, { min: 10 }), `Personas que han fichado en los últimos 10 días laborables (media ${f.num(lastWeekPresence, 1)})`)}
+      ${(tt => card('#/fichajes', 'users', tt.kpi, `${tt.value}<small> / ${t.employees}</small>`, tt.ctx, U.sparkBars(pres, { min: 10 }), `Personas que han fichado en los últimos 10 días laborables (media ${f.num(lastWeekPresence, 1)})`))(teamTexts(t))}
       ${card('#/incidencias?estado=abiertas', 'triangle-alert', 'Incidencias abiertas', t.openInc.length, `<span class="bad">${t.highInc.length} de prioridad alta</span>`, U.prioBars(prioCount), 'Incidencias abiertas por prioridad: alta, media y baja')}
       ${card('#/economico', 'circle-euro', 'Desviación de coste prevista', f.signedPct(t.devPct), `<span class="${t.dev > 0 ? 'warn' : 'ok'}">${f.signedEur(t.dev)}</span><span>al cierre</span>`, U.costBars(months), 'Coste mensual real (barras) frente a planificado (marca)')}
     </section>`;
@@ -276,9 +290,10 @@
     const M = window.MAP_DATA;
     const proj = APP.mapProject;
     const pins = t.ms.map(({ o, m }) => { const [x, y] = proj(o.lat, o.lng); return { o, m, x, y, n: m.present.length }; });
+    const tt = teamTexts(t);
     const towns = Object.entries(M.towns).filter(([n]) => !['Relleu', 'Sella', "Callosa d'en Sarrià"].includes(n));
     return `<section class="card card--map" aria-labelledby="h-map">
-      <div class="card__head"><div><h2 class="card__title" id="h-map">Equipo y obras en el mapa</h2><p class="card__sub">Personas que han fichado hoy en cada obra</p></div><a class="link" href="#/fichajes">Ver fichajes ${icon('arrow-right', 14)}</a></div>
+      <div class="card__head"><div><h2 class="card__title" id="h-map">Equipo y obras en el mapa</h2><p class="card__sub">${esc(tt.map)}</p></div><a class="link" href="#/fichajes">Ver fichajes ${icon('arrow-right', 14)}</a></div>
       <div class="map" id="map">
         <svg viewBox="0 0 ${M.W} ${M.H}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
           <rect x="-500" y="-500" width="${M.W + 1000}" height="${M.H + 1000}" fill="#E7EAE7"/>
@@ -294,9 +309,9 @@
           ${towns.map(([n, [x, y]]) => `<g class="map__townG"><circle class="map__town-dot" cx="${x}" cy="${y}" r="2.6"/><text class="map__town" x="${x + 7}" y="${y + 4}">${esc(n)}</text></g>`).join('')}
           <text class="map__sea" x="600" y="540">Mar Mediterráneo</text>
         </svg>
-        <div class="map__pins">${pins.map(p => `<button type="button" class="pin pin--${p.m.status}" data-act="pin" data-id="${p.o.id}" data-x="${p.x.toFixed(1)}" data-y="${p.y.toFixed(1)}" aria-label="${esc(`${p.o.name}, ${p.o.town}: ${p.n} personas en obra hoy, avance ${p.o.progress} %`)}"><span class="pin__dot">${p.n}</span></button>`).join('')}</div>
+        <div class="map__pins">${pins.map(p => `<button type="button" class="pin pin--${p.m.status}" data-act="pin" data-id="${p.o.id}" data-x="${p.x.toFixed(1)}" data-y="${p.y.toFixed(1)}" aria-label="${esc(`${p.o.name}, ${p.o.town}: ${p.n} ${p.n === 1 ? 'persona' : 'personas'} ${tt.pin}, avance ${p.o.progress} %`)}"><span class="pin__dot">${p.n}</span></button>`).join('')}</div>
         <span class="map__fict">Ubicaciones ficticias</span>
-        <div class="map__legend" aria-hidden="true"><span><i style="background:var(--olive)"></i>En plazo</span><span><i style="background:#A98244"></i>En riesgo</span><span><i style="background:#A65A45"></i>Retrasada</span></div>
+        <div class="map__legend" aria-hidden="true"><span><i style="background:var(--accent)"></i>En plazo</span><span><i style="background:#A98244"></i>En riesgo</span><span><i style="background:#A65A45"></i>Retrasada</span></div>
         <span class="map__attr">© OpenStreetMap</span>
       </div>
     </section>`;
@@ -346,7 +361,7 @@
     $$('.pin', box).forEach(p => p.classList.toggle('is-active', p.dataset.id === id));
     const old = $('.map__pop', box); if (old) old.remove();
     const o = A.obraById(id); const m = A.metrics(o); const pin = $(`.pin[data-id="${id}"]`, box);
-    box.insertAdjacentHTML('beforeend', `<div class="map__pop" data-id="${id}"><img src="${o.photoSm}" alt="" style="object-position:${o.focus}"><div><strong>${esc(o.short)}</strong><small>${m.present.length} en obra hoy · ${o.progress} %</small><a class="link" href="#/obras/${o.id}">Ver obra ${icon('arrow-right', 13)}</a></div></div>`);
+    box.insertAdjacentHTML('beforeend', `<div class="map__pop" data-id="${id}"><img src="${o.photoSm}" alt="" style="object-position:${o.focus}"><div><strong>${esc(o.short)}</strong><small>${m.present.length} ${teamTexts(A.totals()).pin} · ${o.progress} %</small><a class="link" href="#/obras/${o.id}">Ver obra ${icon('arrow-right', 13)}</a></div></div>`);
     placePop($('.map__pop', box), pin);
   }
   APP.actions.pin = el => showPop(el.dataset.id);
@@ -383,7 +398,7 @@
     }).join('');
   }
   function agendaCard() {
-    const items = A.OBRAS.flatMap(o => o.milestones.filter(x => x.date >= A.REF && A.daysBetween(A.REF, x.date) <= 14).map(x => ({ o, x }))).sort((a, b) => a.x.date - b.x.date).slice(0, 6);
+    const items = A.OBRAS.flatMap(o => o.milestones.filter(x => x.date >= A.TODAY && A.daysBetween(A.TODAY, x.date) <= 14).map(x => ({ o, x }))).sort((a, b) => a.x.date - b.x.date).slice(0, 6);
     return `<section class="card card--agenda" aria-labelledby="h-agenda">
       <div class="card__head"><div><h2 class="card__title" id="h-agenda">Próximos hitos</h2><p class="card__sub">Planificación de las dos próximas semanas</p></div></div>
       <div class="milestones">${items.length ? items.map(({ o, x }) => `<a class="ms" href="#/obras/${o.id}"><span class="ms__date"><b>${x.date.getDate()}</b><small>${f.monthShort(x.date)}</small></span><span class="ms__text">${esc(x.label)}<small>${esc(o.short)} · ${f.cap(f.weekday(x.date))}${x.risk ? '' : ''}</small>${x.risk ? `<span class="ms__risk">${icon('circle-alert', 13)}${esc(x.risk)}</span>` : ''}</span></a>`).join('') : '<p class="muted">Sin hitos en las próximas dos semanas.</p>'}</div>
@@ -400,18 +415,20 @@
   function render() {
     const t = A.totals();
     if (!home.featured) home.featured = featuredOrder()[0];
-    const ref = A.REF;
-    const dateTxt = f.dayLong(ref).toUpperCase();
-    const week = (() => { const d = new Date(Date.UTC(ref.getFullYear(), ref.getMonth(), ref.getDate())); const day = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() + 4 - day); const y0 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); return Math.ceil(((d - y0) / 86400000 + 1) / 7); })();
+    const now = new Date();
+    const DC = A.DAYCTX;
+    const note = A.PHASE === 'libre' ? `Hoy es ${DC.off}: no hay jornada. Se muestran los datos de la última, el ${DC.refName}.`
+      : A.PHASE === 'antes' ? `La jornada empieza a las ${DC.start}: todavía no hay fichajes de hoy.`
+      : A.PHASE === 'cerrada' ? 'La jornada de hoy ha terminado.' : '';
     return `<div class="home">
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero__media">${heroImg(home.featured)}<div class="hero__shade"></div></div>
         <div class="hero__bar"><span></span><div class="hero__tools">${U.utilityTools(true)}</div></div>
         <div class="hero__copy">
-          <p class="hero__date"><span>${dateTxt}</span><span class="sep"></span><span>Semana ${week}</span></p>
-          <h1 class="hero__title" id="hero-title" tabindex="-1">${greeting()},<br><em>${esc(A.USER.name)}</em></h1>
+          <p class="hero__date"><span data-clock-date>${f.dayLong(now).toUpperCase()}</span><time class="hero__time" data-clock datetime="${now.toISOString()}">${f.time(now)}</time><span class="sep"></span><span data-clock-week>Semana ${isoWeek(now)}</span></p>
+          <h1 class="hero__title" id="hero-title" tabindex="-1"><span data-greeting>${greeting(now)}</span>,<br><em>${esc(A.USER.name)}</em></h1>
           <p class="hero__sub">La situación de tus obras, equipos y operaciones, en un solo lugar.</p>
-          ${A.IS_WEEKEND ? `<p class="hero__note">${icon('calendar-days', 14)}Fin de semana: se muestra la última jornada laborable.</p>` : ''}
+          ${note ? `<p class="hero__note">${icon('calendar-days', 14)}${esc(note)}</p>` : ''}
         </div>
         <aside class="feature" aria-label="Obra en portada">${featureHTML(home.featured)}</aside>
         ${assistantHTML()}
@@ -435,7 +452,7 @@
     const box = $('#map');
     if (box && window.ResizeObserver) { mapRO = new ResizeObserver(() => fitMap()); mapRO.observe(box); }
     const busiest = A.totals().ms.slice().sort((a, b) => b.m.present.length - a.m.present.length)[0];
-    if (busiest) showPop(busiest.o.id);
+    if (busiest && busiest.m.present.length) showPop(busiest.o.id);
     scrollThread();
     if (APP.pendingQuestion) { const q = APP.pendingQuestion; APP.pendingQuestion = null; setTimeout(() => { const a = $('#assistant'); if (a) a.scrollIntoView({ behavior: 'smooth', block: 'center' }); ask(q); }, 250); }
   }

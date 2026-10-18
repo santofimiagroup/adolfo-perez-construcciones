@@ -2,8 +2,10 @@
    Adolfo Pérez Construcciones · Plataforma de operaciones (DEMO)
    -----------------------------------------------------------------------------
    CONJUNTO DE DATOS FICTICIO. Ninguna obra, persona, cifra ni ubicación
-   corresponde a datos reales de la empresa. Todas las fechas se calculan de
-   forma relativa al día en que se abre la demo, para que siempre sea coherente.
+   corresponde a datos reales de la empresa. La fecha y la hora son las
+   reales del momento de la visita: los datos se calculan respecto a ese
+   momento (días laborables, festivos y fase de la jornada), para que la demo
+   sea coherente a cualquier hora.
 
    Este archivo es la única fuente de datos: los indicadores, las vistas y el
    asistente se calculan a partir de aquí. Los cambios hechos en la demo se
@@ -17,24 +19,58 @@
      1. Fechas de referencia
      ------------------------------------------------------------------------- */
   const DAY = 86400000;
-  const NOW = new Date();
-  const REF = new Date(NOW); REF.setHours(0, 0, 0, 0);
-  const IS_WEEKEND = REF.getDay() === 0 || REF.getDay() === 6;
-  if (REF.getDay() === 6) REF.setDate(REF.getDate() - 1);   // sábado → viernes
-  if (REF.getDay() === 0) REF.setDate(REF.getDate() - 2);   // domingo → viernes
-
   const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
   const at = (d, hh, mm) => { const r = new Date(d); r.setHours(hh, mm, 0, 0); return r; };
   const isWeekend = d => d.getDay() === 0 || d.getDay() === 6;
   const sameDay = (a, b) => a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  /** n días laborables respecto a la fecha de referencia (negativo = pasado) */
+  const daysBetween = (a, b) => Math.round((b - a) / DAY);
+
+  /* Festivos laborables de la Comunitat Valenciana (nacionales y autonómicos).
+     2026: Decreto 100/2025 del Consell (DOGV n.º 10145, 7-7-2025).
+     2027: calendario aprobado por el Consell en marzo de 2026.
+     Las dos fiestas locales dependen de cada municipio y no se incluyen. */
+  const HOLIDAYS = {
+    '2026-01-01': 'Año Nuevo', '2026-01-06': 'Epifanía del Señor', '2026-03-19': 'San José', '2026-04-03': 'Viernes Santo',
+    '2026-04-06': 'Lunes de Pascua', '2026-05-01': 'Fiesta del Trabajo', '2026-06-24': 'San Juan', '2026-08-15': 'Asunción de la Virgen',
+    '2026-10-09': 'Día de la Comunitat Valenciana', '2026-10-12': 'Fiesta Nacional de España', '2026-12-08': 'Inmaculada Concepción', '2026-12-25': 'Navidad',
+    '2027-01-01': 'Año Nuevo', '2027-01-06': 'Epifanía del Señor', '2027-03-19': 'San José', '2027-03-26': 'Viernes Santo',
+    '2027-03-29': 'Lunes de Pascua', '2027-05-01': 'Fiesta del Trabajo', '2027-10-09': 'Día de la Comunitat Valenciana', '2027-10-12': 'Fiesta Nacional de España',
+    '2027-11-01': 'Todos los Santos', '2027-12-06': 'Día de la Constitución', '2027-12-08': 'Inmaculada Concepción', '2027-12-25': 'Navidad'
+  };
+  const holidayName = d => HOLIDAYS[iso(d)] || null;
+  const isWorkday = d => !isWeekend(d) && !HOLIDAYS[iso(d)];
+  const prevWorkday = d => { let r = addDays(d, -1); while (!isWorkday(r)) r = addDays(r, -1); return r; };
+  /** Fecha n días naturales antes de la referencia, llevada al último día laborable si cae en fin de semana o festivo */
+  const workBack = n => { let r = addDays(REF, -n); while (!isWorkday(r)) r = addDays(r, -1); return r; };
+
+  /* Fecha y hora reales de la visita.
+     · Jornada: de 7:00 a 17:30 aprox. (viernes, hasta las 14:30). Se da por cerrada a las 18:15 (viernes, 15:15).
+     · REF es el día operativo: hoy si es laborable; si no (fin de semana o festivo), la última jornada laborable.
+     · PHASE: 'antes' (laborable, antes de las 7:00) · 'jornada' · 'cerrada' (tras el cierre) · 'libre' (hoy no se trabaja). */
+  const NOW = new Date();
+  const TODAY = new Date(NOW); TODAY.setHours(0, 0, 0, 0);
+  const IS_WORKDAY = isWorkday(TODAY);
+  const REF = IS_WORKDAY ? new Date(TODAY) : prevWorkday(TODAY);
+  const START_MIN = 7 * 60;
+  const closeMin = d => d.getDay() === 5 ? 15 * 60 + 15 : 18 * 60 + 15;
+  const nowMin = NOW.getHours() * 60 + NOW.getMinutes();
+  const PHASE = !IS_WORKDAY ? 'libre' : nowMin < START_MIN ? 'antes' : nowMin < closeMin(TODAY) ? 'jornada' : 'cerrada';
+  /** Momento hasta el que existen datos del día operativo (lo posterior aún no ha ocurrido) */
+  const CUT = PHASE === 'libre' ? at(REF, 23, 59) : NOW;
+  const DAY_CLOSED = PHASE === 'cerrada' || PHASE === 'libre';
+  /** Un fichaje sin salida solo está «en curso» hoy y durante la jornada */
+  const isLive = d => PHASE === 'jornada' && sameDay(d, TODAY);
+
+  /** Hora de un evento sembrado: los viernes la jornada termina a las 14:30, así que lo posterior se adelanta 3 h */
+  const atW = (d, hh, mm) => (d.getDay() === 5 && hh * 60 + mm > 14 * 60 + 35 ? at(d, hh - 3, mm) : at(d, hh, mm));
+
+  /** n días laborables respecto al día operativo (negativo = pasado) */
   function workday(n) {
     let d = new Date(REF); const step = n < 0 ? -1 : 1; let left = Math.abs(n);
-    while (left > 0) { d = addDays(d, step); if (!isWeekend(d)) left--; }
+    while (left > 0) { d = addDays(d, step); if (isWorkday(d)) left--; }
     return d;
   }
-  const daysBetween = (a, b) => Math.round((b - a) / DAY);
 
   /* Generador pseudoaleatorio determinista (mismos datos en cada visita) */
   function seeded(str) {
@@ -60,7 +96,7 @@
     region: 'Marina Baixa · Alicante',
     credit: 'Solución diseñada por ADVENTUM Strategy'
   };
-  const USER = { name: 'María', initials: 'M', role: 'Administración' };
+  const USER = { name: 'Mari', initials: 'M', role: 'Administración' };
 
   /* ---------------------------------------------------------------------------
      3. Equipo (20 personas ficticias)
@@ -216,6 +252,7 @@
     if (e.obras.length > 1) return e.obras[d.getDate() % e.obras.length];
     return e.obras[0];
   }
+  const FORGETS_OUT = 'E12';   // en el día operativo, se olvida de fichar la salida
   function buildFichajes() {
     const list = [];
     for (let n = 0; n <= 9; n++) {
@@ -224,11 +261,24 @@
         const rnd = seeded(e.id + dateIso);
         const rec = { id: `${e.id}@${dateIso}`, emp: e.id, date: d, dateIso, obra: defaultObra(e, d, rnd), in: null, out: null, status: 'cerrado', note: '', geo: 'ok', origin: 'App de obra', history: [] };
         if (n === 0) {
-          if (TODAY_IN[e.id]) { const [hh, mm, ob] = TODAY_IN[e.id]; rec.in = at(d, hh, mm); rec.obra = ob; rec.status = 'presente'; rec.origin = ob === 'oficina' ? 'Tableta de oficina' : 'App de obra'; }
-          if (e.id === 'E15') { rec.in = at(d, 8, 47); rec.obra = 'atalaya'; rec.status = 'revision'; rec.geo = 'fuera'; rec.note = 'Entrada registrada a 2,4 km de la obra (fuera de la geocerca).'; }
-          if (e.id === 'E17') { rec.obra = 'terrasses'; rec.status = 'revision'; rec.note = 'Sin fichaje de entrada y sin ausencia comunicada.'; }
-          if (e.id === 'E18') { rec.obra = 'atalaya'; rec.status = 'ausencia'; rec.note = 'Vacaciones aprobadas.'; }
-          if (e.id === 'E19') { rec.obra = 'villas'; rec.status = 'ausencia'; rec.note = 'Asuntos propios (comunicado el día anterior).'; }
+          // Día operativo: solo existe lo ocurrido hasta este momento (CUT)
+          if (e.id === 'E18') { rec.obra = 'atalaya'; rec.status = 'ausencia'; rec.note = 'Vacaciones aprobadas.'; list.push(rec); return; }
+          if (e.id === 'E19') { rec.obra = 'villas'; rec.status = 'ausencia'; rec.note = 'Asuntos propios (comunicado el día anterior).'; list.push(rec); return; }
+          if (e.id === 'E17') {   // se marca como anomalía a partir de las 9:00, cuando ya debería haber fichado
+            if (CUT < at(d, 9, 0)) return;
+            rec.obra = 'terrasses'; rec.status = 'revision'; rec.note = 'Sin fichaje de entrada y sin ausencia comunicada.'; list.push(rec); return;
+          }
+          const plan = e.id === 'E15' ? [8, 47, 'atalaya'] : TODAY_IN[e.id];
+          if (!plan) return;
+          const inAt = at(d, plan[0], plan[1]);
+          if (CUT < inAt) return;   // todavía no ha fichado la entrada
+          const outMin = friday ? 14 * 60 + Math.floor(rnd() * 40) : 17 * 60 + Math.floor(rnd() * 45);
+          const outAt = at(d, Math.floor(outMin / 60), outMin % 60);
+          rec.in = inAt; rec.obra = plan[2]; rec.origin = plan[2] === 'oficina' ? 'Tableta de oficina' : 'App de obra';
+          if (e.id === 'E15') { rec.status = 'revision'; rec.geo = 'fuera'; rec.note = 'Entrada registrada a 2,4 km de la obra (fuera de la geocerca).'; if (CUT >= outAt) rec.out = outAt; }
+          else if (e.id === FORGETS_OUT) { rec.status = DAY_CLOSED ? 'pendiente' : 'presente'; if (DAY_CLOSED) rec.note = 'Sin fichaje de salida.'; }
+          else if (CUT >= outAt) { rec.out = outAt; rec.status = 'cerrado'; }
+          else rec.status = 'presente';
           list.push(rec); return;
         }
         if (e.id === 'E18' && n <= 3) { rec.status = 'ausencia'; rec.note = 'Vacaciones aprobadas.'; list.push(rec); return; }
@@ -258,26 +308,26 @@
      ------------------------------------------------------------------------- */
   function buildPartes() {
     const P = (id, day, hh, mm, obra, author, crew, hours, work, materials, status, extra) => Object.assign({
-      id, date: at(workday(day), hh, mm), obra, author, crew, hours, work, materials, status,
+      id, date: atW(workday(day), hh, mm), obra, author, crew, hours, work, materials, status,
       validatedBy: null, validatedAt: null, returnReason: null, notes: ''
     }, extra || {});
     return [
-      P('PT-2301', -5, 17, 12, 'terrasses', 'E04', ['E04', 'E10', 'E11', 'E17'], 32, 'Hormigonado de pilares de planta 4, bloque B.', [['Hormigón HA-25/B/20/IIa', '18', 'm³'], ['Acero B500S', '1.420', 'kg']], 'validado', { validatedBy: 'E01', validatedAt: at(workday(-5), 18, 30) }),
-      P('PT-2302', -5, 16, 40, 'atalaya', 'E06', ['E06', 'E15', 'E18'], 24, 'Montaje de andamio tubular en fachada sur, plantas 1 a 5.', [['Andamio tubular (alquiler)', '420', 'm²']], 'validado', { validatedBy: 'E03', validatedAt: at(workday(-4), 8, 15) }),
-      P('PT-2303', -4, 17, 5, 'nave', 'E05', ['E05', 'E16'], 16, 'Excavación de zapatas en los ejes C a F y retirada de tierras.', [['Retirada de tierras a vertedero', '64', 'm³']], 'validado', { validatedBy: 'E02', validatedAt: at(workday(-4), 18, 2) }),
+      P('PT-2301', -5, 17, 12, 'terrasses', 'E04', ['E04', 'E10', 'E11', 'E17'], 32, 'Hormigonado de pilares de planta 4, bloque B.', [['Hormigón HA-25/B/20/IIa', '18', 'm³'], ['Acero B500S', '1.420', 'kg']], 'validado', { validatedBy: 'E01', validatedAt: atW(workday(-5), 18, 30) }),
+      P('PT-2302', -5, 16, 40, 'atalaya', 'E06', ['E06', 'E15', 'E18'], 24, 'Montaje de andamio tubular en fachada sur, plantas 1 a 5.', [['Andamio tubular (alquiler)', '420', 'm²']], 'validado', { validatedBy: 'E03', validatedAt: atW(workday(-4), 8, 15) }),
+      P('PT-2303', -4, 17, 5, 'nave', 'E05', ['E05', 'E16'], 16, 'Excavación de zapatas en los ejes C a F y retirada de tierras.', [['Retirada de tierras a vertedero', '64', 'm³']], 'validado', { validatedBy: 'E02', validatedAt: atW(workday(-4), 18, 2) }),
       P('PT-2304', -4, 16, 55, 'hotel', 'E07', ['E07', 'E20'], 16, 'Tabiquería de placa de yeso laminado en la zona de spa.', [['Placa de yeso laminado 15 mm', '180', 'm²'], ['Perfilería 48 mm', '1', 'lote']], 'devuelto', { returnReason: 'Falta indicar las horas de la subcontrata de placa de yeso.' }),
-      P('PT-2305', -4, 15, 30, 'apartamentos', 'E12', ['E12'], 8, 'Instalación de mecanismos y luminarias en los apartamentos 3B y 4B.', [['Mecanismos serie blanca', '46', 'ud'], ['Downlight LED 12 W', '28', 'ud']], 'validado', { validatedBy: 'E01', validatedAt: at(workday(-3), 9, 10) }),
-      P('PT-2306', -3, 17, 20, 'villas', 'E05', ['E05', 'E13', 'E19'], 24, 'Hormigonado de la losa de cimentación de la villa 5.', [['Hormigón HA-30/B/20/IIa', '36', 'm³'], ['Acero B500S', '2.100', 'kg']], 'validado', { validatedBy: 'E02', validatedAt: at(workday(-3), 18, 40) }),
-      P('PT-2307', -3, 16, 48, 'atalaya', 'E06', ['E06', 'E15'], 16, 'Colocación de placas EPS del sistema SATE en fachada este, plantas 6 a 8.', [['Placa EPS 60 mm', '180', 'm²'], ['Mortero adhesivo', '1.100', 'kg']], 'validado', { validatedBy: 'E03', validatedAt: at(workday(-2), 8, 5) }),
-      P('PT-2308', -2, 17, 30, 'terrasses', 'E04', ['E04', 'E10', 'E11', 'E17'], 34, 'Hormigonado del forjado de cubierta del bloque B.', [['Hormigón HA-25/B/20/IIa', '48', 'm³'], ['Acero B500S', '2.300', 'kg']], 'validado', { validatedBy: 'E01', validatedAt: at(workday(-2), 18, 55) }),
-      P('PT-2309', -2, 16, 35, 'hotel', 'E07', ['E07', 'E14', 'E20'], 24, 'Canalizaciones de climatización en planta 1, zona de habitaciones.', [['Conducto de chapa galvanizada', '86', 'm'], ['Aislamiento térmico', '90', 'm²']], 'validado', { validatedBy: 'E03', validatedAt: at(workday(-1), 8, 20) }),
-      P('PT-2310', -2, 15, 50, 'apartamentos', 'E12', ['E12'], 8, 'Repaso de pintura y limpieza final del apartamento 2A.', [['Pintura plástica mate', '24', 'l']], 'validado', { validatedBy: 'E01', validatedAt: at(workday(-1), 9, 0) }),
-      P('PT-2311', -1, 16, 20, 'nave', 'E16', ['E16'], 8, 'Vertido de hormigón de limpieza en las zapatas de los ejes A a C.', [['Hormigón HL-150', '22', 'm³']], 'validado', { validatedBy: 'E02', validatedAt: at(workday(-1), 17, 45) }),
-      P('PT-2312', -1, 16, 50, 'hotel', 'E07', ['E07', 'E14', 'E20'], 24, 'Distribución de tubería multicapa en planta 2 (habitaciones 201 a 212).', [['Tubería multicapa 16 mm', '420', 'm'], ['Accesorios de presión', '1', 'lote']], 'validado', { validatedBy: 'E03', validatedAt: at(workday(-1), 18, 10) }),
+      P('PT-2305', -4, 15, 30, 'apartamentos', 'E12', ['E12'], 8, 'Instalación de mecanismos y luminarias en los apartamentos 3B y 4B.', [['Mecanismos serie blanca', '46', 'ud'], ['Downlight LED 12 W', '28', 'ud']], 'validado', { validatedBy: 'E01', validatedAt: atW(workday(-3), 9, 10) }),
+      P('PT-2306', -3, 17, 20, 'villas', 'E05', ['E05', 'E13', 'E19'], 24, 'Hormigonado de la losa de cimentación de la villa 5.', [['Hormigón HA-30/B/20/IIa', '36', 'm³'], ['Acero B500S', '2.100', 'kg']], 'validado', { validatedBy: 'E02', validatedAt: atW(workday(-3), 18, 40) }),
+      P('PT-2307', -3, 16, 48, 'atalaya', 'E06', ['E06', 'E15'], 16, 'Colocación de placas EPS del sistema SATE en fachada este, plantas 6 a 8.', [['Placa EPS 60 mm', '180', 'm²'], ['Mortero adhesivo', '1.100', 'kg']], 'validado', { validatedBy: 'E03', validatedAt: atW(workday(-2), 8, 5) }),
+      P('PT-2308', -2, 17, 30, 'terrasses', 'E04', ['E04', 'E10', 'E11', 'E17'], 34, 'Hormigonado del forjado de cubierta del bloque B.', [['Hormigón HA-25/B/20/IIa', '48', 'm³'], ['Acero B500S', '2.300', 'kg']], 'validado', { validatedBy: 'E01', validatedAt: atW(workday(-2), 18, 55) }),
+      P('PT-2309', -2, 16, 35, 'hotel', 'E07', ['E07', 'E14', 'E20'], 24, 'Canalizaciones de climatización en planta 1, zona de habitaciones.', [['Conducto de chapa galvanizada', '86', 'm'], ['Aislamiento térmico', '90', 'm²']], 'validado', { validatedBy: 'E03', validatedAt: atW(workday(-1), 8, 20) }),
+      P('PT-2310', -2, 15, 50, 'apartamentos', 'E12', ['E12'], 8, 'Repaso de pintura y limpieza final del apartamento 2A.', [['Pintura plástica mate', '24', 'l']], 'validado', { validatedBy: 'E01', validatedAt: atW(workday(-1), 9, 0) }),
+      P('PT-2311', -2, 16, 20, 'nave', 'E16', ['E16'], 8, 'Vertido de hormigón de limpieza en las zapatas de los ejes A a C.', [['Hormigón HL-150', '22', 'm³']], 'validado', { validatedBy: 'E02', validatedAt: atW(workday(-1), 8, 40) }),
+      P('PT-2312', -1, 16, 50, 'hotel', 'E07', ['E07', 'E14', 'E20'], 24, 'Distribución de tubería multicapa en planta 2 (habitaciones 201 a 212).', [['Tubería multicapa 16 mm', '420', 'm'], ['Accesorios de presión', '1', 'lote']], 'validado', { validatedBy: 'E03', validatedAt: atW(workday(-1), 18, 10) }),
       P('PT-2313', -1, 17, 5, 'villas', 'E05', ['E05', 'E13', 'E19'], 24, 'Encofrado y armado del muro del vaso de piscina de la villa 4.', [['Acero B500S', '640', 'kg'], ['Panel de encofrado (alquiler)', '38', 'm²']], 'pendiente'),
-      P('PT-2314', 0, 9, 50, 'nave', 'E16', ['E16'], 8, 'Colocación de pernos de anclaje y nivelación de placas base en los ejes A a C.', [['Pernos de anclaje M20', '96', 'ud'], ['Mortero sin retracción', '150', 'kg']], 'pendiente', { notes: 'Trabajo coordinado con la subcontrata de estructura metálica.' }),
-      P('PT-2315', 0, 10, 5, 'terrasses', 'E04', ['E04', 'E10', 'E11'], 22.5, 'Cerramiento de la fachada norte con bloque de termoarcilla, planta 3.', [['Bloque de termoarcilla 30×19×24', '1.250', 'ud'], ['Mortero M-7,5', '2,4', 'm³']], 'pendiente'),
-      P('PT-2316', 0, 10, 18, 'atalaya', 'E06', ['E06', 'E15'], 14, 'Reparación de frentes de forjado y armaduras en los balcones de la planta 9 (fachada este).', [['Mortero de reparación R4', '340', 'kg'], ['Inhibidor de corrosión', '12', 'l']], 'pendiente', { notes: 'Ver incidencia INC-037: la corrosión es mayor de lo previsto.' })
+      P('PT-2314', -1, 17, 12, 'nave', 'E16', ['E16'], 8, 'Colocación de pernos de anclaje y nivelación de placas base en los ejes A a C.', [['Pernos de anclaje M20', '96', 'ud'], ['Mortero sin retracción', '150', 'kg']], 'pendiente', { notes: 'Trabajo coordinado con la subcontrata de estructura metálica.' }),
+      P('PT-2315', -1, 17, 24, 'terrasses', 'E04', ['E04', 'E10', 'E11'], 22.5, 'Cerramiento de la fachada norte con bloque de termoarcilla, planta 3.', [['Bloque de termoarcilla 30×19×24', '1.250', 'ud'], ['Mortero M-7,5', '2,4', 'm³']], 'pendiente'),
+      P('PT-2316', -1, 17, 38, 'atalaya', 'E06', ['E06', 'E15'], 14, 'Reparación de frentes de forjado y armaduras en los balcones de la planta 9 (fachada este).', [['Mortero de reparación R4', '340', 'kg'], ['Inhibidor de corrosión', '12', 'l']], 'pendiente', { notes: 'Ver incidencia INC-037: la corrosión es mayor de lo previsto.' })
     ];
   }
 
@@ -287,22 +337,22 @@
   const INC_CATEGORIES = ['Seguridad', 'Calidad', 'Suministro', 'Imprevisto técnico', 'Cliente y permisos', 'Coordinación de proyecto', 'Económica', 'Logística', 'Documentación'];
   function buildIncidencias() {
     const I = (id, obra, title, cat, prio, status, daysAgo, hh, mm, owner, by, desc, extra) => Object.assign({
-      id, obra, title, category: cat, priority: prio, status, openedAt: at(addDays(REF, -daysAgo), hh, mm), owner, openedBy: by,
+      id, obra, title, category: cat, priority: prio, status, openedAt: atW(workBack(daysAgo), hh, mm), owner, openedBy: by,
       description: desc, resolvedAt: null, resolution: '', log: []
     }, extra || {});
     return [
-      I('INC-036', 'terrasses', 'Falta de protección en el hueco del ascensor de la planta 2', 'Seguridad', 'alta', 'resuelta', 11, 8, 40, 'E04', 'E09', 'Detectado en la visita de seguridad: falta la barandilla perimetral del hueco del ascensor.', { resolvedAt: at(addDays(REF, -10), 11, 20), resolution: 'Barandilla instalada y revisada por el técnico de prevención.' }),
+      I('INC-036', 'terrasses', 'Falta de protección en el hueco del ascensor de la planta 2', 'Seguridad', 'alta', 'resuelta', 11, 8, 40, 'E04', 'E09', 'Detectado en la visita de seguridad: falta la barandilla perimetral del hueco del ascensor.', { resolvedAt: atW(workBack(10), 11, 20), resolution: 'Barandilla instalada y revisada por el técnico de prevención.' }),
       I('INC-037', 'atalaya', 'Corrosión de armaduras más extensa de lo previsto en balcones', 'Imprevisto técnico', 'media', 'abierta', 19, 10, 15, 'E03', 'E06', 'Al sanear los frentes de forjado aparecen armaduras con pérdida de sección en 14 balcones (previstos: 6). Requiere valorar la ampliación de la partida de reparación.', { decision: 'Aprobar la ampliación de la partida de reparación estructural de Edificio Atalaya (INC-037).' }),
-      I('INC-038', 'apartamentos', 'Desperfecto en la puerta de entrada del apartamento 3B', 'Calidad', 'baja', 'resuelta', 6, 12, 5, 'E01', 'E12', 'Golpe en la hoja de la puerta durante la descarga de material.', { resolvedAt: at(workday(-1), 16, 42), resolution: 'Hoja sustituida por el carpintero.' }),
+      I('INC-038', 'apartamentos', 'Desperfecto en la puerta de entrada del apartamento 3B', 'Calidad', 'baja', 'resuelta', 6, 12, 5, 'E01', 'E12', 'Golpe en la hoja de la puerta durante la descarga de material.', { resolvedAt: atW(workday(-1), 16, 42), resolution: 'Hoja sustituida por el carpintero.' }),
       I('INC-039', 'terrasses', 'Fisura en el muro de contención del garaje (eje 4)', 'Calidad', 'media', 'en_curso', 9, 9, 30, 'E08', 'E04', 'Fisura vertical de unos 2 m. Pendiente del informe de la oficina técnica para decidir el sellado o el refuerzo.'),
-      I('INC-040', 'villas', 'Camión de áridos sin acceso por corte de calle', 'Logística', 'baja', 'resuelta', 7, 7, 55, 'E05', 'E05', 'Corte de la calle de acceso por obras municipales.', { resolvedAt: at(addDays(REF, -5), 13, 0), resolution: 'Entrega reprogramada por el acceso norte.' }),
+      I('INC-040', 'villas', 'Camión de áridos sin acceso por corte de calle', 'Logística', 'baja', 'resuelta', 7, 7, 55, 'E05', 'E05', 'Corte de la calle de acceso por obras municipales.', { resolvedAt: atW(workBack(5), 13, 0), resolution: 'Entrega reprogramada por el acceso norte.' }),
       I('INC-041', 'terrasses', 'Retraso del proveedor de carpintería exterior de aluminio', 'Suministro', 'alta', 'abierta', 6, 11, 10, 'E01', 'E01', 'El proveedor retrasa tres semanas la entrega de la carpintería del bloque A. Afecta al inicio de los acabados interiores.', { decision: 'Decidir si se activa un proveedor alternativo de carpintería para Les Terrasses (INC-041).' }),
       I('INC-042', 'atalaya', 'Anclaje de andamio con holgura en la planta 8 (fachada este)', 'Seguridad', 'alta', 'en_curso', 3, 9, 5, 'E09', 'E09', 'Dos anclajes con holgura detectados en la revisión semanal. Zona señalizada y acceso restringido hasta su reparación.'),
       I('INC-043', 'hotel', 'Sobrecoste en climatización por cambio de equipos', 'Económica', 'media', 'abierta', 8, 13, 20, 'E03', 'E07', 'La propiedad solicita equipos de mayor eficiencia. Incremento estimado de 64.000 € pendiente de aprobación.', { decision: 'Aprobar o rechazar el sobrecoste de climatización de Hotel Albera, estimado en 64.000 € (INC-043).' }),
       I('INC-044', 'atalaya', 'La comunidad no autoriza el acceso a tres terrazas privadas', 'Cliente y permisos', 'alta', 'abierta', 14, 12, 0, 'E03', 'E06', 'Sin acceso a las terrazas de las plantas 9, 10 y 11 no se puede terminar el SATE de la fachada este. Pendiente de la junta de propietarios.', { decision: 'Enviar un escrito formal a la comunidad de Edificio Atalaya para desbloquear el acceso a las terrazas (INC-044).' }),
       I('INC-045', 'hotel', 'Interferencia entre conductos de climatización y vigas en la planta 1', 'Coordinación de proyecto', 'media', 'abierta', 4, 10, 40, 'E07', 'E07', 'El trazado del proyecto choca con dos vigas de cuelgue. Se necesita la solución de la dirección facultativa.', { decision: 'Pedir a la dirección facultativa la solución para el cruce de conductos y vigas de Hotel Albera (INC-045).' }),
       I('INC-046', 'villas', 'Agua freática en la excavación de la piscina de la villa 5', 'Imprevisto técnico', 'media', 'en_curso', 2, 8, 50, 'E02', 'E05', 'Aparece agua a 1,8 m de profundidad. Se ha instalado una bomba de achique de forma provisional.'),
-      I('INC-047', 'nave', 'Pendiente del informe geotécnico complementario de la zona C', 'Documentación', 'baja', 'abierta', 0, 9, 12, 'E02', 'E02', 'La dirección facultativa solicita un ensayo adicional antes de hormigonar las zapatas de la zona C.')
+      I('INC-047', 'nave', 'Pendiente del informe geotécnico complementario de la zona C', 'Documentación', 'baja', 'abierta', 1, 12, 30, 'E02', 'E02', 'La dirección facultativa solicita un ensayo adicional antes de hormigonar las zapatas de la zona C.')
     ];
   }
 
@@ -311,7 +361,7 @@
      ------------------------------------------------------------------------- */
   function buildDocumentos() {
     const Dc = (id, obra, name, type, status, dateDays, expiryDays, extra) => Object.assign({
-      id, obra, name, type, status, date: addDays(REF, dateDays), expiry: expiryDays == null ? null : addDays(REF, expiryDays), validatedBy: null, size: null
+      id, obra, name, type, status, date: workBack(-dateDays), expiry: expiryDays == null ? null : addDays(REF, expiryDays), validatedBy: null, size: null
     }, extra || {});
     return [
       Dc('DOC-101', 'terrasses', 'Licencia de obra mayor', 'Licencia', 'vigente', -420, null),
@@ -324,8 +374,8 @@
       Dc('DOC-108', 'atalaya', 'Acta de la junta de propietarios', 'Cliente', 'pendiente', -1, null),
       Dc('DOC-109', 'atalaya', 'Certificado de montaje del andamio', 'Seguridad y salud', 'vigente', -150, 120),
       Dc('DOC-110', 'nave', 'Licencia de obra mayor', 'Licencia', 'vigente', -75, null),
-      Dc('DOC-111', 'nave', 'Informe geotécnico complementario · zona C', 'Proyecto', 'pendiente', 0, null),
-      Dc('DOC-112', 'hotel', 'Proyecto modificado de climatización', 'Proyecto', 'pendiente', 0, null),
+      Dc('DOC-111', 'nave', 'Informe geotécnico complementario · zona C', 'Proyecto', 'pendiente', -1, null),
+      Dc('DOC-112', 'hotel', 'Proyecto modificado de climatización', 'Proyecto', 'pendiente', -1, null),
       Dc('DOC-113', 'hotel', 'Plan de seguridad y salud', 'Seguridad y salud', 'vigente', -230, null),
       Dc('DOC-114', 'apartamentos', 'Certificado de la instalación eléctrica', 'Instalaciones', 'pendiente', -3, null),
       Dc('DOC-115', null, 'Formación en trabajos en altura · Bogdan Ionescu', 'Formación PRL', 'caducado', -1107, -12),
@@ -336,24 +386,41 @@
   /* ---------------------------------------------------------------------------
      9. Actividad reciente (eventos sembrados)
      ------------------------------------------------------------------------- */
-  function buildActividad() {
-    const A = (day, hh, mm, kind, who, title, detail, obra, ref) => ({ at: at(workday(day), hh, mm), kind, who, title, detail, obra, ref });
-    return [
-      A(0, 10, 36, 'documento', 'E08', 'Nuevo documento', 'Proyecto modificado de climatización', 'hotel', 'DOC-112'),
+  function buildActividad(fichajes) {
+    const A = (day, hh, mm, kind, who, title, detail, obra, ref) => ({ at: atW(workday(day), hh, mm), kind, who, title, detail, obra, ref });
+    const d0 = workday(0);
+    const entered = fichajes.filter(fc => sameDay(fc.date, d0) && fc.in && fc.in <= at(d0, 8, 20) && fc.geo !== 'fuera');
+    const centers = new Set(entered.map(fc => fc.obra)).size;
+    const list = [
+      // día operativo (solo se muestran los eventos ya ocurridos)
+      A(0, 16, 10, 'validacion', 'E09', 'Visita de seguridad completada', 'Sin incidencias', 'nave'),
+      A(0, 12, 45, 'foto', 'E06', '5 fotografías añadidas', 'Andamio de la fachada sur', 'atalaya'),
+      A(0, 11, 20, 'material', null, 'Recepción de material', 'Acero B500S · 2.300 kg', 'villas'),
       A(0, 10, 31, 'avance', 'E01', 'Avance actualizado al 68 %', null, 'terrasses'),
-      A(0, 10, 18, 'parte', 'E06', 'Parte enviado · PT-2316', 'Reparación de frentes de forjado', 'atalaya', 'PT-2316'),
-      A(0, 10, 5, 'parte', 'E04', 'Parte enviado · PT-2315', 'Cerramiento de la fachada norte', 'terrasses', 'PT-2315'),
-      A(0, 9, 50, 'parte', 'E16', 'Parte enviado · PT-2314', 'Pernos de anclaje, ejes A–C', 'nave', 'PT-2314'),
       A(0, 9, 40, 'foto', 'E08', '6 fotografías añadidas', 'Saneado de balcones, planta 9', 'atalaya'),
-      A(0, 9, 12, 'incidencia', 'E02', 'Incidencia abierta · INC-047', 'Informe geotécnico complementario', 'nave', 'INC-047'),
       A(0, 8, 47, 'alerta', 'E15', 'Fichaje fuera de geocerca', 'Entrada a 2,4 km de la obra', 'atalaya'),
-      A(0, 8, 20, 'equipo', null, 'Entrada del equipo', '16 fichajes correctos en 6 centros de trabajo', null),
+      A(0, 8, 20, 'equipo', null, 'Entrada del equipo', `${entered.length} fichajes correctos en ${centers} centros de trabajo`, null),
+      // jornada anterior
       A(-1, 18, 10, 'validacion', 'E03', 'Parte validado · PT-2312', null, 'hotel', 'PT-2312'),
+      A(-1, 17, 52, 'documento', 'E08', 'Nuevo documento', 'Proyecto modificado de climatización', 'hotel', 'DOC-112'),
+      A(-1, 17, 38, 'parte', 'E06', 'Parte enviado · PT-2316', 'Reparación de frentes de forjado', 'atalaya', 'PT-2316'),
+      A(-1, 17, 24, 'parte', 'E04', 'Parte enviado · PT-2315', 'Cerramiento de la fachada norte', 'terrasses', 'PT-2315'),
+      A(-1, 17, 12, 'parte', 'E16', 'Parte enviado · PT-2314', 'Pernos de anclaje, ejes A–C', 'nave', 'PT-2314'),
       A(-1, 17, 5, 'parte', 'E05', 'Parte enviado · PT-2313', 'Muro del vaso de piscina, villa 4', 'villas', 'PT-2313'),
       A(-1, 16, 42, 'resuelta', 'E01', 'Incidencia resuelta · INC-038', 'Puerta del apartamento 3B', 'apartamentos', 'INC-038'),
-      A(-1, 12, 30, 'material', null, 'Recepción de material', '1.250 bloques de termoarcilla', 'terrasses'),
-      A(-1, 11, 5, 'foto', 'E02', '4 fotografías añadidas', 'Villas 3 y 4 · cerramientos', 'villas')
+      A(-1, 12, 30, 'incidencia', 'E02', 'Incidencia abierta · INC-047', 'Informe geotécnico complementario', 'nave', 'INC-047'),
+      A(-1, 11, 5, 'foto', 'E02', '4 fotografías añadidas', 'Villas 3 y 4 · cerramientos', 'villas'),
+      A(-1, 9, 30, 'material', null, 'Recepción de material', '1.250 bloques de termoarcilla', 'terrasses')
     ];
+    // cierre automático de cada jornada (resumen de fichajes)
+    const closure = d => {
+      const recs = fichajes.filter(fc => sameDay(fc.date, d));
+      const worked = recs.filter(fc => fc.in).length; const noOut = recs.filter(fc => fc.in && !fc.out).length;
+      return { at: at(d, Math.floor(closeMin(d) / 60), closeMin(d) % 60), kind: 'equipo', who: null, title: 'Cierre de jornada', detail: `${worked} jornadas registradas${noOut ? ` · ${noOut} sin fichaje de salida` : ''}`, obra: null };
+    };
+    list.push(closure(workday(-1)));
+    if (DAY_CLOSED) list.push(closure(d0));
+    return list.filter(ev => ev.at <= CUT);
   }
 
   /* ---------------------------------------------------------------------------
@@ -368,7 +435,7 @@
     state.partes = buildPartes();
     state.incidencias = buildIncidencias();
     state.documentos = buildDocumentos();
-    state.actividad = buildActividad();
+    state.actividad = buildActividad(state.fichajes);
   }
   function readJournal() { try { const raw = localStorage.getItem(STORE_KEY); return raw ? JSON.parse(raw) : []; } catch (e) { return []; } }
   function writeJournal() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state.journal)); return true; } catch (e) { return false; } }
@@ -421,11 +488,20 @@
         return p;
       }
       case 'fichaje.resolve': {
-        const f = state.fichajes.find(x => x.id === op.id); if (!f) return null;
+        let f = state.fichajes.find(x => x.id === op.id);
+        if (!f && op.action === 'entrada') {   // persona que aún no tenía registro ese día
+          const [emp, dateIso] = String(op.id).split('@'); const e = empById(emp);
+          const inWindow = Array.from({ length: 10 }, (_, n) => iso(workday(-n))).includes(dateIso);
+          if (!e || !dateIso || !inWindow) return null;
+          const [y, mo, dd] = dateIso.split('-').map(Number); const date = new Date(y, mo - 1, dd);
+          f = { id: op.id, emp, date, dateIso, obra: op.obra || e.obras[0] || 'oficina', in: null, out: null, status: 'revision', note: '', geo: 'ok', origin: 'Corrección de oficina', history: [] };
+          state.fichajes.push(f);
+        }
+        if (!f) return null;
         const prev = f.status;
         if (op.action === 'salida') { f.out = revive(op.out); f.status = 'cerrado'; f.note = `Salida registrada manualmente: ${op.note || 'sin observaciones'}`; f.origin = 'Corrección de oficina'; }
-        if (op.action === 'validar') { f.status = sameDay(f.date, REF) ? 'presente' : 'cerrado'; f.geo = f.geo === 'fuera' ? 'validado' : f.geo; f.note = `Validado por oficina: ${op.note || 'sin observaciones'}`; }
-        if (op.action === 'entrada') { f.in = revive(op.in); if (op.obra) f.obra = op.obra; f.status = sameDay(f.date, REF) && !f.out ? 'presente' : f.out ? 'cerrado' : 'pendiente'; f.origin = 'Corrección de oficina'; f.note = `Entrada registrada manualmente: ${op.note || 'sin observaciones'}`; }
+        if (op.action === 'validar') { f.status = f.out ? 'cerrado' : isLive(f.date) ? 'presente' : 'pendiente'; f.geo = f.geo === 'fuera' ? 'validado' : f.geo; f.note = `Validado por oficina: ${op.note || 'sin observaciones'}`; }
+        if (op.action === 'entrada') { f.in = revive(op.in); if (op.obra) f.obra = op.obra; f.status = f.out ? 'cerrado' : isLive(f.date) ? 'presente' : 'pendiente'; f.origin = 'Corrección de oficina'; f.note = `Entrada registrada manualmente: ${op.note || 'sin observaciones'}`; }
         if (op.action === 'ausencia') { f.status = 'ausencia'; f.in = null; f.out = null; f.note = op.note || 'Ausencia registrada por oficina.'; }
         f.history.push({ at: when, from: prev, action: op.action });
         const emp = empById(f.emp);
@@ -509,8 +585,7 @@
     const incs = state.incidencias.filter(i => i.obra === o.id);
     const open = incs.filter(i => OPEN(i.status));
     const high = open.filter(i => i.priority === 'alta');
-    const today = state.fichajes.filter(f => sameDay(f.date, REF) && f.obra === o.id);
-    const present = today.filter(f => f.in && (f.status === 'presente' || f.status === 'revision'));
+    const present = presentOf(state.fichajes.filter(f => sameDay(f.date, REF) && f.obra === o.id));
     const partesPend = state.partes.filter(p => p.obra === o.id && p.status === 'pendiente');
     const phase = o.progress < 15 ? 'Inicio de obra' : o.progress >= 90 ? 'Fase final' : null;
     const remainingDays = daysBetween(REF, o.end);
@@ -519,6 +594,8 @@
   }
 
   function todayFichajes() { return state.fichajes.filter(f => sameDay(f.date, REF)); }
+  /** Durante la jornada: quien está ahora en obra (entrada sin salida). Fuera de ella: quien trabajó ese día. */
+  function presentOf(recs) { return PHASE === 'jornada' ? recs.filter(f => f.in && !f.out) : recs.filter(f => f.in); }
   function reviewFichajes() { return state.fichajes.filter(f => f.status === 'revision' || f.status === 'pendiente'); }
 
   function totals() {
@@ -528,7 +605,8 @@
     const ev = ms.reduce((s, x) => s + x.m.ev, 0);
     const eac = ms.reduce((s, x) => s + x.m.eac, 0);
     const tf = todayFichajes();
-    const present = tf.filter(f => f.in && (f.status === 'presente' || f.status === 'revision'));
+    const present = presentOf(tf);
+    const worked = tf.filter(f => f.in);
     const absent = tf.filter(f => f.status === 'ausencia');
     const missing = tf.filter(f => !f.in && f.status !== 'ausencia');
     const openInc = state.incidencias.filter(i => OPEN(i.status));
@@ -539,7 +617,7 @@
       avgProgress: OBRAS.reduce((s, o) => s + o.progress, 0) / OBRAS.length,
       weightedProgress: ev / budget * 100,
       budget, ac, ev, eac, dev: eac - budget, devPct: (eac - budget) / budget * 100,
-      employees: EMPLEADOS.length, present, absent, missing,
+      employees: EMPLEADOS.length, present, worked, absent, missing,
       review: reviewFichajes(),
       openInc, highInc: openInc.filter(i => i.priority === 'alta'),
       partesPend: state.partes.filter(p => p.status === 'pendiente'),
@@ -626,16 +704,31 @@
       if (sameDay(d, addDays(now, 1))) return 'Mañana';
       return cap(fmt.weekdayShort(d));
     },
-    daysAgo(d) { const n = daysBetween(new Date(d.getFullYear(), d.getMonth(), d.getDate()), REF); return n <= 0 ? 'hoy' : n === 1 ? '1 día' : `${n} días`; }
+    daysAgo(d) { const n = daysBetween(new Date(d.getFullYear(), d.getMonth(), d.getDate()), TODAY); return n <= 0 ? 'hoy' : n === 1 ? '1 día' : `${n} días`; }
   };
-  function daysOpen(inc) { const end = inc.resolvedAt || REF; return Math.max(0, daysBetween(new Date(inc.openedAt.getFullYear(), inc.openedAt.getMonth(), inc.openedAt.getDate()), new Date(end.getFullYear(), end.getMonth(), end.getDate()))); }
+  function daysOpen(inc) { const end = inc.resolvedAt || TODAY; return Math.max(0, daysBetween(new Date(inc.openedAt.getFullYear(), inc.openedAt.getMonth(), inc.openedAt.getDate()), new Date(end.getFullYear(), end.getMonth(), end.getDate()))); }
+
+  /* Cómo nombrar el día operativo en los textos */
+  const DAYCTX = (() => {
+    const isToday = sameDay(REF, TODAY);
+    const refName = `${WEEKDAYS[REF.getDay()]} ${REF.getDate()}`;                 // «viernes 16»
+    const holiday = holidayName(TODAY);
+    return {
+      isToday, refName,
+      ref: isToday ? 'hoy' : `el ${refName}`,                                         // «hoy» · «el viernes 16»
+      Ref: isToday ? 'Hoy' : `El ${refName}`,
+      off: IS_WORKDAY ? null : holiday ? `festivo (${holiday})` : WEEKDAYS[TODAY.getDay()],   // «domingo» · «festivo (…)»
+      start: '7:00',
+      end: REF.getDay() === 5 ? '14:30' : '17:30'
+    };
+  })();
 
   /* ---------------------------------------------------------------------------
      12. API pública
      ------------------------------------------------------------------------- */
   load();
   window.APC = {
-    NOW, REF, IS_WEEKEND, COMPANY, USER, CATEGORIES, INC_CATEGORIES, EMPLEADOS, OBRAS,
+    NOW, TODAY, REF, PHASE, IS_WORKDAY, DAYCTX, COMPANY, USER, CATEGORIES, INC_CATEGORIES, EMPLEADOS, OBRAS,
     get fichajes() { return state.fichajes; },
     get partes() { return state.partes; },
     get incidencias() { return state.incidencias; },
@@ -643,7 +736,7 @@
     get actividad() { return state.actividad; },
     get journalSize() { return state.journal.length; },
     empById, obraById, metrics, chaptersOf, totals, monthlyCost, presenceSeries, daysOpen, fmt,
-    todayFichajes, reviewFichajes, hoursOf, workday, addDays, at, sameDay, iso, daysBetween, isWeekend,
+    todayFichajes, reviewFichajes, hoursOf, workday, addDays, at, sameDay, iso, daysBetween, isWeekend, isWorkday, holidayName, isLive,
     commit, reset, load, nextId: prefix => nextId(prefix, prefix === 'INC' ? state.incidencias : prefix === 'PT' ? state.partes : state.documentos),
     S, Sinv, STATUS_LABEL, OPEN
   };

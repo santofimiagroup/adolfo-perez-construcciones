@@ -21,6 +21,16 @@
   const hash = s => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h; };
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
+  /* --- fecha y hora reales: cómo nombrar la jornada --- */
+  const DC = A.DAYCTX;
+  const offTxt = () => `Hoy es ${DC.off} y no hay jornada`;   // «Hoy es domingo y no hay jornada»
+  function teamKpi(t) {
+    if (A.PHASE === 'jornada') return { label: 'En obra ahora', value: `${t.present.length}/${t.employees}` };
+    if (A.PHASE === 'antes') return { label: 'En obra hoy', value: `0/${t.employees}` };
+    if (A.PHASE === 'cerrada') return { label: 'Fichajes de hoy', value: `${t.worked.length}/${t.employees}` };
+    return { label: 'Última jornada', value: `${t.worked.length}/${t.employees}` };
+  }
+
   /* --- bloques de respuesta --- */
   const P = html => ({ type: 'p', html });
   const L = items => ({ type: 'list', items });
@@ -93,10 +103,10 @@
     const worstTime = [...t.ms].sort((a, b) => b.m.gap - a.m.gap)[0];
     const worstCost = [...t.ms].sort((a, b) => b.m.devPct - a.m.devPct)[0];
     return [
-      P(`Situación de ${ctx.obras.length ? 'las obras seleccionadas' : `las <strong>${t.obras} obras activas</strong>`} a ${f.dayLong(A.REF).replace(/^\w+, /, '')}:`),
+      P(`Situación de ${ctx.obras.length ? 'las obras seleccionadas' : `las <strong>${t.obras} obras activas</strong>`} a ${f.dayLong(A.TODAY).replace(/^\S+, /, '')}, ${f.time(new Date())}:`),
       K([
         { label: 'Avance medio', value: f.pct(t.avgProgress) },
-        { label: 'En obra hoy', value: `${t.present.length}/${t.employees}` },
+        teamKpi(t),
         { label: 'Incidencias abiertas', value: String(t.openInc.length), tone: t.highInc.length ? 'warn' : '' },
         { label: 'Desviación prevista', value: f.signedPct(t.devPct), tone: t.devPct > 0 ? 'warn' : 'ok' }
       ]),
@@ -111,14 +121,14 @@
   function ansObra(o) {
     const m = A.metrics(o);
     const jefe = A.empById(o.jefe);
-    const next = o.milestones.filter(x => x.date >= A.REF)[0];
+    const next = o.milestones.filter(x => x.date >= A.TODAY)[0];
     const blocks = [
       P(`<strong>${esc(o.name)}</strong> · ${esc(o.type)} en ${esc(o.town)} ${statusTag(m)}`),
       K([
         { label: 'Avance real', value: f.pct(o.progress) },
         { label: 'Previsto hoy', value: f.pct(m.planned) },
         { label: 'Desviación coste', value: f.signedPct(m.devPct), tone: m.devPct > 2 ? 'warn' : m.devPct < 0 ? 'ok' : '' },
-        { label: 'En obra hoy', value: String(m.present.length) }
+        { label: teamKpi({ present: m.present, worked: m.present, employees: 0 }).label, value: String(m.present.length) }
       ]),
       L([
         `Jefe de obra: <strong>${esc(jefe.short)}</strong>${o.encargado ? ` · encargado: ${esc(A.empById(o.encargado).short)}` : ''}.`,
@@ -153,21 +163,35 @@
   }
 
   function ansAbsent(ctx) {
-    const tf = A.todayFichajes().filter(fc => !ctx.obras.length || ctx.obras.some(o => o.id === fc.obra));
+    const inScope = fc => !ctx.obras.length || ctx.obras.some(o => o.id === fc.obra);
+    const all = A.todayFichajes();
+    const tf = all.filter(inScope);
     const noIn = tf.filter(fc => !fc.in);
     const outFence = tf.filter(fc => fc.in && fc.status === 'revision');
-    const dayTxt = A.IS_WEEKEND ? `el ${f.weekday(A.REF)} ${A.REF.getDate()}` : 'hoy';
-    const hay = A.IS_WEEKEND ? 'hubo' : 'hay';
-    if (!noIn.length && !outFence.length) return [P(`Todo el equipo${ctx.obras.length ? ` de ${ctx.obras.map(o => esc(o.short)).join(' y ')}` : ''} ha fichado correctamente ${dayTxt}.`), ACT([{ label: 'Ver fichajes', href: '#/fichajes' }])];
+    const scope = ctx.obras.length ? ` de ${ctx.obras.map(o => esc(o.short)).join(' y ')}` : '';
     const row = fc => { const e = A.empById(fc.emp); const o = A.obraById(fc.obra); return `<strong>${esc(e.short)}</strong> <span class="ai-muted">(${esc(e.role.toLowerCase())}${o ? ` · ${esc(o.short)}` : ''})</span> — ${fc.status === 'ausencia' ? `ausencia registrada: ${esc(fc.note.replace(/\.$/, '').toLowerCase())}` : '<span class="ai-warn">sin fichaje ni ausencia comunicada</span>'}`; };
+    if (A.PHASE === 'antes') {
+      return [
+        P(`Todavía no ha empezado la jornada (empieza a las ${DC.start}), así que aún no ha fichado nadie${scope}.`),
+        noIn.length ? P(`Ya hay ${plural(noIn.length, 'ausencia registrada', 'ausencias registradas')} para hoy:`) : null,
+        noIn.length ? L(noIn.map(row)) : null,
+        ACT([{ label: 'Abrir fichajes', href: '#/fichajes' }])
+      ].filter(Boolean);
+    }
+    // durante la jornada, quien todavía no tiene ningún fichaje
+    const waiting = A.PHASE === 'jornada' ? A.EMPLEADOS.filter(e => !all.some(fc => fc.emp === e.id) && (!ctx.obras.length || ctx.obras.some(o => e.obras.includes(o.id)))) : [];
+    const lead = A.PHASE === 'libre' ? `${offTxt()}. En la última jornada (${DC.refName})` : 'Hoy';
+    const hay = A.PHASE === 'libre' ? 'hubo' : 'hay';
+    if (!noIn.length && !outFence.length && !waiting.length) return [P(`Todo el equipo${scope} ha fichado correctamente ${DC.ref}.`), ACT([{ label: 'Ver fichajes', href: '#/fichajes' }])];
     const blocks = [
-      P(noIn.length ? `${dayTxt.charAt(0).toUpperCase() + dayTxt.slice(1)} ${hay} <strong>${plural(noIn.length, 'persona', 'personas')}</strong> sin fichaje de entrada:` : `Todas las personas han fichado la entrada ${dayTxt}.`),
+      P(noIn.length ? `${lead} ${hay} <strong>${plural(noIn.length, 'persona', 'personas')}</strong> sin fichaje de entrada:` : `${lead}, todas las personas con jornada han fichado la entrada.`),
       noIn.length ? L(noIn.map(row)) : null
     ];
     if (outFence.length) blocks.push(P(`Además, ${outFence.map(fc => `<strong>${esc(A.empById(fc.emp).short)}</strong> fichó a las ${f.time(fc.in)} ${fc.geo === 'fuera' ? 'fuera de la geocerca' : 'con una anomalía'} de ${esc((A.obraById(fc.obra) || {}).short || 'la obra')}`).join(' y ')}: queda pendiente de revisión.`));
+    if (waiting.length) blocks.push(P(`Todavía no ${waiting.length === 1 ? 'ha' : 'han'} fichado la entrada ${plural(waiting.length, 'persona', 'personas')} (son las ${f.time(new Date())}; la entrada habitual es entre las 7:30 y las 8:30): ${waiting.map(e => esc(e.short)).join(', ')}.`));
     const unjust = noIn.filter(fc => fc.status !== 'ausencia').length;
-    if (unjust) blocks.push(P(`Te recomiendo confirmar con el encargado ${unjust === 1 ? 'la ausencia sin comunicar' : 'las ausencias sin comunicar'}${A.IS_WEEKEND ? ' y dejarla registrada' : ' antes del cierre de la jornada'}.`));
-    blocks.push(ACT([{ label: 'Abrir fichajes de hoy', href: '#/fichajes' }, { label: 'Pendientes de revisión', href: '#/fichajes?estado=revision' }]));
+    if (unjust) blocks.push(P(`Te recomiendo confirmar con el encargado ${unjust === 1 ? 'la ausencia sin comunicar' : 'las ausencias sin comunicar'}${A.PHASE === 'jornada' ? ' antes del cierre de la jornada' : ' y dejarla registrada'}.`));
+    blocks.push(ACT([{ label: A.PHASE === 'libre' ? 'Abrir la última jornada' : 'Abrir fichajes de hoy', href: '#/fichajes' }, { label: 'Pendientes de revisión', href: '#/fichajes?estado=revision' }]));
     return blocks.filter(Boolean);
   }
 
@@ -183,11 +207,20 @@
 
   function ansPresence(ctx) {
     const t = A.totals();
-    const byObra = A.OBRAS.map(o => ({ o, n: A.todayFichajes().filter(fc => fc.obra === o.id && fc.in).length })).filter(x => !ctx.obras.length || ctx.obras.includes(x.o));
-    const office = A.todayFichajes().filter(fc => fc.obra === 'oficina' && fc.in).length;
+    const recs = A.todayFichajes();
+    const live = A.PHASE === 'jornada';
+    const count = list => list.filter(fc => fc.in && (!live || !fc.out)).length;
+    const byObra = A.OBRAS.map(o => ({ o, n: count(recs.filter(fc => fc.obra === o.id)) })).filter(x => !ctx.obras.length || ctx.obras.includes(x.o));
+    const office = count(recs.filter(fc => fc.obra === 'oficina'));
+    const extra = [t.absent.length ? plural(t.absent.length, 'ausencia registrada', 'ausencias registradas') : '', t.missing.length ? `${plural(t.missing.length, 'persona', 'personas')} sin fichar` : ''].filter(Boolean).join(' y ');
+    let lead;
+    if (A.PHASE === 'antes') lead = `Todavía no ha empezado la jornada (empieza a las ${DC.start}): aún no hay nadie en obra.${extra ? ` Hay ${extra}.` : ''}`;
+    else if (live) lead = `Ahora mismo (${f.time(new Date())}) hay <strong>${t.present.length} de ${t.employees} personas</strong> en obra; hoy han fichado ${t.worked.length}.${extra ? ` Hay ${extra}.` : ''}`;
+    else if (A.PHASE === 'cerrada') lead = `La jornada de hoy ya ha terminado: han fichado <strong>${t.worked.length} de ${t.employees} personas</strong>.${extra ? ` Hubo ${extra}.` : ''}`;
+    else lead = `${offTxt()}. El ${DC.refName} ficharon <strong>${t.worked.length} de ${t.employees} personas</strong>.${extra ? ` Hubo ${extra}.` : ''}`;
     return [
-      P(`${A.IS_WEEKEND ? `El ${f.weekday(A.REF)} ficharon` : 'Hoy han fichado'} <strong>${t.present.length} de ${t.employees} personas</strong> de plantilla. ${t.absent.length ? `${plural(t.absent.length, 'ausencia registrada', 'ausencias registradas')}` : ''}${t.missing.length ? ` y ${plural(t.missing.length, 'persona', 'personas')} sin fichar` : ''}.`),
-      T(['Centro de trabajo', 'Personas', 'Subcontrata'], byObra.map(({ o, n }) => [obraLink(o), String(n), String(o.subcontract)]).concat(ctx.obras.length ? [] : [['Oficina central', String(office), '—']]), ['l', 'r', 'r']),
+      P(lead),
+      T(['Centro de trabajo', live ? 'En obra ahora' : 'Personas', 'Subcontrata'], byObra.map(({ o, n }) => [obraLink(o), String(n), String(o.subcontract)]).concat(ctx.obras.length ? [] : [['Oficina central', String(office), '—']]), ['l', 'r', 'r']),
       NOTE('La subcontrata se muestra como dotación prevista; sus fichajes no forman parte de esta demo.'),
       ACT([{ label: 'Abrir fichajes', href: '#/fichajes' }, { label: 'Ver equipo', href: '#/equipo' }])
     ];
@@ -312,7 +345,7 @@
       if (m.high.length) r.push(`${plural(m.high.length, 'incidencia de prioridad alta', 'incidencias de prioridad alta')}`);
       if (m.devPct > 2) r.push(`desviación de coste ${f.signedPct(m.devPct)}`);
       if (m.partesPend.length) r.push(`${plural(m.partesPend.length, 'parte por validar', 'partes por validar')}`);
-      const next = o.milestones.find(x => x.date >= A.REF && A.daysBetween(A.REF, x.date) <= 7);
+      const next = o.milestones.find(x => x.date >= A.TODAY && A.daysBetween(A.TODAY, x.date) <= 7);
       if (next) r.push(`hito el ${f.dayShort(next.date)}: ${esc(next.label.charAt(0).toLowerCase() + next.label.slice(1))}`);
       return r;
     };
@@ -327,14 +360,19 @@
   function ansEmployee(e) {
     const tf = A.todayFichajes().find(fc => fc.emp === e.id);
     const obras = e.obras.map(A.obraById);
-    const where = tf && tf.in ? `fichó a las ${f.time(tf.in)} en ${tf.obra === 'oficina' ? 'la oficina central' : esc(A.obraById(tf.obra).short)}` : tf && tf.status === 'ausencia' ? `no trabaja hoy (${esc(tf.note.replace(/\.$/, '').toLowerCase())})` : 'no ha fichado la entrada hoy';
-    const week = A.fichajes.filter(fc => fc.emp === e.id && A.daysBetween(fc.date, A.REF) < 7);
+    let where;
+    if (tf && tf.status === 'ausencia') where = `no trabaja (${esc(tf.note.replace(/\.$/, '').toLowerCase())})`;
+    else if (tf && tf.in) where = `fichó la entrada a las ${f.time(tf.in)} en ${tf.obra === 'oficina' ? 'la oficina central' : esc(A.obraById(tf.obra).short)}${tf.out ? ` y la salida a las ${f.time(tf.out)}` : A.isLive(tf.date) ? ' y sigue en la jornada' : ' y no fichó la salida'}`;
+    else if (A.PHASE === 'antes') where = `todavía no ha fichado: la jornada empieza a las ${DC.start}`;
+    else if (!tf && A.PHASE === 'jornada') where = 'todavía no ha fichado la entrada';
+    else where = 'no fichó la entrada';
+    const week = A.fichajes.filter(fc => fc.emp === e.id && A.daysBetween(fc.date, A.TODAY) < 7);
     const hours = week.reduce((s, fc) => s + (A.hoursOf(fc) || 0), 0);
     const partes = A.partes.filter(p => p.author === e.id || p.crew.includes(e.id)).sort((a, b) => b.date - a.date);
     return [
       P(`<strong>${esc(e.name)}</strong> · ${esc(e.role)}${obras.length ? ` en ${obras.map(o => esc(o.short)).join(' y ')}` : e.note ? ` · ${esc(e.note)}` : ''}.`),
       L([
-        `${A.IS_WEEKEND ? `El ${f.weekday(A.REF)}` : 'Hoy'} ${where}${tf && tf.status === 'revision' ? ' <span class="ai-warn">(pendiente de revisión)</span>' : ''}.`,
+        `${A.PHASE === 'libre' ? `El ${DC.refName} (última jornada)` : 'Hoy'} ${where}${tf && tf.status === 'revision' ? ' <span class="ai-warn">(pendiente de revisión)</span>' : ''}.`,
         `Horas registradas en los últimos 7 días: <strong>${f.hours(hours)}</strong>.`,
         partes.length ? `Último parte en el que participa: ${partes[0].id} (${f.dayShort(partes[0].date)}) · ${esc(partes[0].work.charAt(0).toLowerCase() + partes[0].work.slice(1))}` : 'No figura en partes recientes.',
         `Formación: ${e.prl.map(esc).join(' · ')}.`
@@ -348,7 +386,11 @@
     const next = A.workday(1);
     const ranked = [...t.ms].sort((a, b) => b.m.attention - a.m.attention).filter(x => x.m.attention > 1.5).slice(0, 3);
     const decisions = A.incidencias.filter(i => A.OPEN(i.status) && i.decision).sort((a, b) => ({ alta: 0, media: 1, baja: 2 }[a.priority] - { alta: 0, media: 1, baja: 2 }[b.priority]) || A.daysOpen(b) - A.daysOpen(a)).slice(0, 4);
-    const milestones = A.OBRAS.flatMap(o => o.milestones.filter(x => x.date >= A.REF && A.daysBetween(A.REF, x.date) <= 7).map(x => ({ o, x }))).sort((a, b) => a.x.date - b.x.date);
+    const milestones = A.OBRAS.flatMap(o => o.milestones.filter(x => x.date >= A.TODAY && A.daysBetween(A.TODAY, x.date) <= 7).map(x => ({ o, x }))).sort((a, b) => a.x.date - b.x.date);
+    const teamLine = A.PHASE === 'jornada' ? `${t.present.length} de ${t.employees} personas en obra ahora mismo`
+      : A.PHASE === 'antes' ? `La jornada de hoy aún no ha empezado (${plural(t.absent.length, 'ausencia prevista', 'ausencias previstas')})`
+      : A.PHASE === 'cerrada' ? `${t.worked.length} de ${t.employees} personas ficharon hoy`
+      : `${t.worked.length} de ${t.employees} personas ficharon en la última jornada (${DC.refName})`;
     const docsExp = t.docsAlert.filter(d => d.status === 'caducado' || d.status === 'caduca');
     const critical = ranked.map(({ o, m }) => {
       const parts = [];
@@ -363,7 +405,7 @@
         { h: '1. Situación general', items: [`${t.obras} obras activas con un avance medio del ${f.pct(t.avgProgress)}. ${plural(t.attention.length, 'obra requiere', 'obras requieren')} atención.`, `Coste ejecutado: ${f.eurM(t.ac)} de ${f.eurM(t.budget)} presupuestados. Previsión al cierre: ${f.eurM(t.eac)} (${f.signedPct(t.devPct)}).`] },
         { h: '2. Puntos críticos', items: critical },
         { h: '3. Decisiones que requieren dirección', items: decisions.map(i => esc(i.decision)) },
-        { h: '4. Equipo y fichajes', items: [`${t.present.length} de ${t.employees} personas en obra ${A.IS_WEEKEND ? 'en la última jornada' : 'hoy'}; ${plural(t.review.length, 'fichaje pendiente', 'fichajes pendientes')} de revisión.`, docsExp.length ? `Documentación a renovar: ${docsExp.map(d => esc(d.name)).join('; ')}.` : 'Sin documentación caducada.'] },
+        { h: '4. Equipo y fichajes', items: [`${teamLine}; ${plural(t.review.length, 'fichaje pendiente', 'fichajes pendientes')} de revisión.`, docsExp.length ? `Documentación a renovar: ${docsExp.map(d => esc(d.name)).join('; ')}.` : 'Sin documentación caducada.'] },
         { h: '5. Próximos hitos (7 días)', items: milestones.length ? milestones.slice(0, 5).map(({ o, x }) => `${f.cap(f.weekdayShort(x.date))} · ${esc(o.short)}: ${esc(x.label)}`) : ['Sin hitos en los próximos 7 días.'] },
         { h: '6. Pendiente de oficina', items: [`${plural(t.partesPend.length, 'parte de trabajo', 'partes de trabajo')} por validar y ${plural(A.documentos.filter(d => d.status === 'pendiente').length, 'documento', 'documentos')} por validar.`] }
       ] },

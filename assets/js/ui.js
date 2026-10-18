@@ -61,7 +61,7 @@
   }
 
   /* ---------- gráficos SVG ---------- */
-  function sparkBars(values, { w = 92, h = 40, gap = 3, color = '#C9C2B4', last = 'var(--olive)', min = 0 } = {}) {
+  function sparkBars(values, { w = 92, h = 40, gap = 3, color = '#C9C2B4', last = 'var(--accent)', min = 0 } = {}) {
     const n = values.length; const bw = (w - gap * (n - 1)) / n;
     const max = Math.max(...values, 1); const lo = Math.min(min, ...values);
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${values.map((v, i) => {
@@ -71,14 +71,14 @@
   }
   function progressColumns(items, { w = 92, h = 40 } = {}) {
     const n = items.length, gap = 5, bw = (w - gap * (n - 1)) / n;
-    const col = { plazo: 'var(--olive)', riesgo: '#B98E4B', retrasada: '#B5654F', terminada: 'var(--olive)' };
+    const col = { plazo: 'var(--accent)', riesgo: '#B98E4B', retrasada: '#B5654F', terminada: 'var(--accent)' };
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${items.map((it, i) => {
       const x = i * (bw + gap); const bh = Math.max(3, it.v / 100 * h);
-      return `<rect x="${x.toFixed(1)}" y="0" width="${bw.toFixed(1)}" height="${h}" rx="2" fill="#F0EDE7"/><rect x="${x.toFixed(1)}" y="${(h - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="2" fill="${col[it.s] || 'var(--olive)'}"/>`;
+      return `<rect x="${x.toFixed(1)}" y="0" width="${bw.toFixed(1)}" height="${h}" rx="2" fill="#F0EDE7"/><rect x="${x.toFixed(1)}" y="${(h - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="2" fill="${col[it.s] || 'var(--accent)'}"/>`;
     }).join('')}</svg>`;
   }
   function prioBars(c, { w = 92, h = 40 } = {}) {
-    const items = [['alta', c.alta, 'var(--danger)'], ['media', c.media, 'var(--warn)'], ['baja', c.baja, '#A9B5A4']];
+    const items = [['alta', c.alta, 'var(--danger)'], ['media', c.media, 'var(--warn)'], ['baja', c.baja, '#BDB9B1']];
     const max = Math.max(1, ...items.map(x => x[1])); const bw = 22, gap = (w - bw * 3) / 2;
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h + 12}" aria-hidden="true">${items.map(([k, v, col], i) => {
       const x = i * (bw + gap); const bh = Math.max(3, v / max * (h - 6));
@@ -90,7 +90,7 @@
     const max = Math.max(...series.map(s => Math.max(s.actual, s.planned)), 1);
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${series.map((s, i) => {
       const x = i * (bw + gap); const ah = s.actual / max * (h - 3); const py = h - s.planned / max * (h - 3);
-      return `<rect x="${x.toFixed(1)}" y="${(h - ah).toFixed(1)}" width="${bw.toFixed(1)}" height="${ah.toFixed(1)}" rx="1.6" fill="${s.current ? 'var(--olive)' : '#C9C2B4'}"/><rect x="${(x - 1).toFixed(1)}" y="${(py - 1).toFixed(1)}" width="${(bw + 2).toFixed(1)}" height="2" rx="1" fill="#242824" opacity=".55"/>`;
+      return `<rect x="${x.toFixed(1)}" y="${(h - ah).toFixed(1)}" width="${bw.toFixed(1)}" height="${ah.toFixed(1)}" rx="1.6" fill="${s.current ? 'var(--accent)' : '#C9C2B4'}"/><rect x="${(x - 1).toFixed(1)}" y="${(py - 1).toFixed(1)}" width="${(bw + 2).toFixed(1)}" height="2" rx="1" fill="#242824" opacity=".55"/>`;
     }).join('')}</svg>`;
   }
 
@@ -116,12 +116,12 @@
     const tx = X(o.t), ty = Y(o.progress / 100), py = Y(A.S(o.t));
     return `<svg class="scurve" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" role="img" aria-label="Curva de avance: real ${o.progress} %, previsto ${Math.round(m.planned)} % a hoy">
       ${grid}${ticks.join('')}
-      <path d="${area}" fill="rgba(82,99,79,.08)"/>
+      <path d="${area}" fill="rgba(185,161,187,.22)"/>
       <path d="${plan}" fill="none" stroke="#9A9D96" stroke-width="1.5" stroke-dasharray="4 4"/>
-      <path d="${real}" fill="none" stroke="var(--olive)" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="${real}" fill="none" stroke="var(--accent-700)" stroke-width="2.4" stroke-linecap="round"/>
       <line x1="${tx}" x2="${tx}" y1="${pad.t}" y2="${Y(0)}" stroke="#242824" stroke-opacity=".25" stroke-dasharray="2 3"/>
       <circle cx="${tx}" cy="${py}" r="3.5" fill="#fff" stroke="#9A9D96" stroke-width="1.5"/>
-      <circle cx="${tx}" cy="${ty}" r="5" fill="var(--olive)" stroke="#fff" stroke-width="2"/>
+      <circle cx="${tx}" cy="${ty}" r="5" fill="var(--accent-ink)" stroke="#fff" stroke-width="2"/>
       <text x="${Math.min(tx + 8, w - 40)}" y="${pad.t + 10}" style="fill:#242824;font-weight:600">Hoy</text>
     </svg>`;
   }
@@ -139,7 +139,7 @@
       const cx = pad.l + slot * i + slot / 2;
       const ah = Y(0) - Y(s.actual);
       return `<g><title>${f.cap(f.monthLong(s.month))}${s.current ? ' (en curso)' : ''}: coste real ${f.eurAuto(s.actual)} · planificado ${f.eurAuto(s.planned)}</title>
-        <rect x="${(cx - bw / 2).toFixed(1)}" y="${Y(s.actual).toFixed(1)}" width="${bw.toFixed(1)}" height="${ah.toFixed(1)}" rx="4" fill="${s.current ? 'var(--olive)' : '#C9C2B4'}"/>
+        <rect x="${(cx - bw / 2).toFixed(1)}" y="${Y(s.actual).toFixed(1)}" width="${bw.toFixed(1)}" height="${ah.toFixed(1)}" rx="4" fill="${s.current ? 'var(--accent)' : '#C9C2B4'}"/>
         <rect x="${(cx - bw / 2 - 5).toFixed(1)}" y="${(Y(s.planned) - 1.25).toFixed(1)}" width="${(bw + 10).toFixed(1)}" height="2.5" rx="1.2" fill="var(--warn)"/>
         <text x="${cx.toFixed(1)}" y="${h - 8}" text-anchor="middle" style="${s.current ? 'fill:#242824;font-weight:600' : ''}">${f.monthShort(s.month)}${s.current ? '*' : ''}</text></g>`;
     }).join('');

@@ -37,7 +37,7 @@
   function renderPartes(route) {
     const p = route.params; const list = partesFiltered(p);
     const c = s => A.partes.filter(x => x.status === s).length;
-    const hours = A.partes.filter(x => A.daysBetween(x.date, A.REF) < 7).reduce((s, x) => s + x.hours, 0);
+    const hours = A.partes.filter(x => A.daysBetween(x.date, A.TODAY) < 7).reduce((s, x) => s + x.hours, 0);
     return `<div class="page">
       ${U.pageHead({ crumbs: [{ label: 'Partes de trabajo' }], eyebrow: 'Operaciones', title: 'Partes de trabajo', sub: `Trabajo realizado, horas y materiales enviados desde cada obra · <strong>${c('pendiente')} pendientes de validar</strong> · ${f.num(hours, 0)} h registradas en los últimos 7 días.`, actions: `<button type="button" class="btn btn--secondary" data-act="partes-csv">${icon('download', 16)}Exportar CSV</button><button type="button" class="btn btn--primary" data-act="parte-new">${icon('plus', 16)}Nuevo parte</button>` })}
       <div class="toolbar">
@@ -144,7 +144,7 @@
   };
   APP.actions['partes-csv'] = () => {
     const list = partesFiltered(APP.route.params);
-    U.downloadCSV(`partes_${A.iso(A.REF)}.csv`, ['Parte', 'Fecha', 'Obra', 'Responsable', 'Equipo', 'Horas', 'Trabajo realizado', 'Materiales', 'Estado', 'Validado por', 'Motivo de devolución'],
+    U.downloadCSV(`partes_${A.iso(A.TODAY)}.csv`, ['Parte', 'Fecha', 'Obra', 'Responsable', 'Equipo', 'Horas', 'Trabajo realizado', 'Materiales', 'Estado', 'Validado por', 'Motivo de devolución'],
       list.map(p => [p.id, A.iso(p.date), A.obraById(p.obra).name, U.personName(p.author).replace(' (tú)', ''), p.crew.map(id => U.personName(id).replace(' (tú)', '')).join(', '), U.csvNum(p.hours, 1), p.work, p.materials.map(m => `${m[0]} (${m[1]} ${m[2]})`).join(' | '), U.STATUS.parte[p.status], p.validatedBy ? U.personName(p.validatedBy).replace(' (tú)', '') : '', p.returnReason || '']));
   };
   APP.views.partes = { render: renderPartes, title: 'Partes de trabajo', mount: r => { if (r.params.id) openParte(r.params.id); } };
@@ -263,7 +263,7 @@
   };
   APP.actions['inc-csv'] = () => {
     const { list } = incFiltered(APP.route.params);
-    U.downloadCSV(`incidencias_${A.iso(A.REF)}.csv`, ['ID', 'Título', 'Obra', 'Categoría', 'Prioridad', 'Estado', 'Responsable', 'Fecha de apertura', 'Días abierta', 'Resolución'],
+    U.downloadCSV(`incidencias_${A.iso(A.TODAY)}.csv`, ['ID', 'Título', 'Obra', 'Categoría', 'Prioridad', 'Estado', 'Responsable', 'Fecha de apertura', 'Días abierta', 'Resolución'],
       list.map(i => [i.id, i.title, A.obraById(i.obra).name, i.category, U.PRIO[i.priority], U.STATUS.inc[i.status], U.personName(i.owner).replace(' (tú)', ''), A.iso(i.openedAt), A.daysOpen(i), i.resolution || '']));
   };
   APP.views.incidencias = { render: renderIncidencias, title: 'Incidencias', mount: r => { if (r.params.id) openInc(r.params.id); } };
@@ -288,7 +288,7 @@
           <div class="bullets">${rows.map(({ o, m }) => { const cpct = Math.min(100, m.ac / o.budget * 100); return `<div class="bullet">
             <div class="bullet__name"><a href="#/obras/${o.id}/economico">${esc(o.short)}</a><small>${f.eurM(o.budget)} presupuesto</small></div>
             <div><div class="btrack" role="img" aria-label="${esc(`Coste ejecutado ${f.pct(cpct)} del presupuesto, avance físico ${o.progress} %`)}"><i class="${m.ac > m.ev * 1.01 ? 'over' : ''}" style="width:${cpct}%"></i><b style="left:${o.progress}%"></b></div><div class="btrack__lbl"><span>Coste ${f.pct(cpct)}</span><span>Avance ${o.progress} %</span></div></div>
-            <div class="bullet__dev"><strong style="color:${m.dev > 0 ? 'var(--warn-ink)' : 'var(--olive-ink)'}">${f.signedPct(m.devPct)}</strong><span class="muted">${f.signedEur(m.dev)}</span></div></div>`; }).join('')}</div>
+            <div class="bullet__dev"><strong style="color:${m.dev > 0 ? 'var(--warn-ink)' : 'var(--accent-ink)'}">${f.signedPct(m.devPct)}</strong><span class="muted">${f.signedEur(m.dev)}</span></div></div>`; }).join('')}</div>
           <div class="legend" style="padding:0 20px 18px"><span><i></i>Coste ejecutado (% del presupuesto)</span><span><i class="mark"></i>Avance físico</span><span><i style="background:#B5654F"></i>Coste por encima del avance</span></div>
         </section>
         <section class="card"><div class="card__head"><div><h2 class="card__title">Coste mensual · todas las obras</h2><p class="card__sub">${f.cap(f.monthLong(cur.month))} en curso: ${f.eurAuto(cur.actual)} de ${f.eurAuto(cur.planned)} previstos a esta fecha</p></div></div>
@@ -296,7 +296,7 @@
       </div>
       <section class="card table-card" style="margin-top:20px"><div class="card__head"><div><h2 class="card__title">Detalle por obra</h2></div></div>
         <div class="table-wrap"><table class="dtable dtable--stack"><thead><tr><th scope="col">Obra</th><th scope="col" class="r">Presupuesto</th><th scope="col" class="r">Coste ejecutado</th><th scope="col" class="r">Avance físico</th><th scope="col" class="r hide-lg">Valor del avance</th><th scope="col" class="r">Previsión al cierre</th><th scope="col" class="r">Desviación</th></tr></thead>
-        <tbody>${rows.map(({ o, m }) => `<tr><td class="primary"><a class="obra-chip" href="#/obras/${o.id}/economico"><img src="${o.photoSm}" alt="" style="object-position:${o.focus}"><strong>${esc(o.short)}</strong></a></td><td class="r" data-label="Presupuesto">${f.eur(o.budget)}</td><td class="r" data-label="Coste ejecutado">${f.eur(m.ac)}</td><td class="r" data-label="Avance">${o.progress} %</td><td class="r hide-sm hide-lg">${f.eur(Math.round(m.ev))}</td><td class="r" data-label="Previsión">${f.eur(Math.round(m.eac))}</td><td class="r" data-label="Desviación" style="font-weight:600;color:${m.dev > 0 ? 'var(--warn-ink)' : 'var(--olive-ink)'}">${f.signedEur(m.dev)} · ${f.signedPct(m.devPct)}</td></tr>`).join('')}</tbody>
+        <tbody>${rows.map(({ o, m }) => `<tr><td class="primary"><a class="obra-chip" href="#/obras/${o.id}/economico"><img src="${o.photoSm}" alt="" style="object-position:${o.focus}"><strong>${esc(o.short)}</strong></a></td><td class="r" data-label="Presupuesto">${f.eur(o.budget)}</td><td class="r" data-label="Coste ejecutado">${f.eur(m.ac)}</td><td class="r" data-label="Avance">${o.progress} %</td><td class="r hide-sm hide-lg">${f.eur(Math.round(m.ev))}</td><td class="r" data-label="Previsión">${f.eur(Math.round(m.eac))}</td><td class="r" data-label="Desviación" style="font-weight:600;color:${m.dev > 0 ? 'var(--warn-ink)' : 'var(--accent-ink)'}">${f.signedEur(m.dev)} · ${f.signedPct(m.devPct)}</td></tr>`).join('')}</tbody>
         <tfoot><tr><td>Total</td><td class="r">${f.eur(t.budget)}</td><td class="r">${f.eur(t.ac)}</td><td class="r">${f.pct(t.weightedProgress)}</td><td class="r hide-sm hide-lg">${f.eur(Math.round(t.ev))}</td><td class="r">${f.eur(Math.round(t.eac))}</td><td class="r">${f.signedEur(t.dev)} · ${f.signedPct(t.devPct)}</td></tr></tfoot></table></div></section>
       <p class="method">${icon('info', 15)}<span>Método: valor del avance = presupuesto × avance físico. Desviación = coste ejecutado − valor del avance; la previsión al cierre añade al coste real el presupuesto del trabajo pendiente. Cifras ficticias de demostración.</span></p>
       ${U.footer()}
@@ -304,7 +304,7 @@
   }
   APP.actions['eco-csv'] = () => {
     const t = A.totals();
-    U.downloadCSV(`control-economico_${A.iso(A.REF)}.csv`, ['Obra', 'Presupuesto (€)', 'Coste ejecutado (€)', 'Avance físico (%)', 'Valor del avance (€)', 'Previsión al cierre (€)', 'Desviación (€)', 'Desviación (%)'],
+    U.downloadCSV(`control-economico_${A.iso(A.TODAY)}.csv`, ['Obra', 'Presupuesto (€)', 'Coste ejecutado (€)', 'Avance físico (%)', 'Valor del avance (€)', 'Previsión al cierre (€)', 'Desviación (€)', 'Desviación (%)'],
       t.ms.map(({ o, m }) => [o.name, U.csvNum(o.budget, 0), U.csvNum(m.ac, 0), o.progress, U.csvNum(m.ev, 0), U.csvNum(m.eac, 0), U.csvNum(m.dev, 0), U.csvNum(m.devPct, 2)]).concat([['TOTAL', U.csvNum(t.budget, 0), U.csvNum(t.ac, 0), U.csvNum(t.weightedProgress, 1), U.csvNum(t.ev, 0), U.csvNum(t.eac, 0), U.csvNum(t.dev, 0), U.csvNum(t.devPct, 2)]]));
   };
   APP.views.economico = { render: renderEconomico, title: 'Control económico' };
@@ -316,7 +316,7 @@
   const DOC_ICON = { Licencia: 'badge-check', Proyecto: 'ruler', 'Seguridad y salud': 'shield-check', Certificación: 'receipt-euro', Maquinaria: 'hammer', Instalaciones: 'gauge', Cliente: 'signature', 'Formación PRL': 'hard-hat', 'Coordinación empresarial': 'users' };
   function docRow(d) {
     const where = d.obra ? A.obraById(d.obra).short : 'Empresa';
-    const exp = d.expiry ? (d.status === 'caducado' ? `<strong style="color:var(--danger-ink)">Caducó el ${f.dayShort(d.expiry)}</strong>hace ${A.daysBetween(d.expiry, A.REF)} días` : `<strong${d.status === 'caduca' ? ' style="color:var(--warn-ink)"' : ''}>Caduca el ${f.dayMed(d.expiry)}</strong>${d.status === 'caduca' ? `en ${A.daysBetween(A.REF, d.expiry)} días` : 'Con caducidad'}`) : '<strong>Sin caducidad</strong>No requiere renovación';
+    const exp = d.expiry ? (d.status === 'caducado' ? `<strong style="color:var(--danger-ink)">Caducó el ${f.dayShort(d.expiry)}</strong>hace ${A.daysBetween(d.expiry, A.TODAY)} días` : `<strong${d.status === 'caduca' ? ' style="color:var(--warn-ink)"' : ''}>Caduca el ${f.dayMed(d.expiry)}</strong>${d.status === 'caduca' ? `en ${A.daysBetween(A.TODAY, d.expiry)} días` : 'Con caducidad'}`) : '<strong>Sin caducidad</strong>No requiere renovación';
     return `<article class="row row--doc${d.isNew && (new Date() - d.date) < 8000 ? ' is-new' : ''}">
       <span class="docicon docicon--${d.status}" aria-hidden="true">${icon(DOC_ICON[d.type] || 'file-text', 20)}</span>
       <div style="min-width:0"><h3 class="row__title">${esc(d.name)}</h3><div class="row__meta"><span>${esc(where)}</span><span>${esc(d.type)}</span><span>${d.status === 'pendiente' ? 'Subido' : 'Emitido'} el ${f.dayShort(d.date)}</span>${d.fileName ? `<span>${esc(d.fileName)}</span>` : ''}${d.validatedBy ? `<span>Validado por ${esc(U.personName(d.validatedBy))}</span>` : ''}</div></div>
@@ -366,7 +366,7 @@
         <div class="field span-2"><label for="du-name">Nombre del documento<span class="req">*</span></label><input class="input" id="du-name" name="name" maxlength="120" value="${renew ? esc(renew.name) : ''}"></div>
         <div class="field"><label for="du-type">Tipo<span class="req">*</span></label><select class="select" id="du-type" name="type"><option value="">Selecciona</option>${DOC_TYPES.map(t => `<option${renew && renew.type === t ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></div>
         <div class="field"><label for="du-obra">Obra</label><select class="select" id="du-obra" name="obra"><option value="">Empresa (general)</option>${A.OBRAS.map(o => `<option value="${o.id}"${renew && renew.obra === o.id ? ' selected' : ''}>${esc(o.short)}</option>`).join('')}</select></div>
-        <div class="field"><label for="du-exp">Fecha de caducidad <span class="muted" style="font-weight:400">(si aplica)</span></label><input class="input" type="date" id="du-exp" name="expiry" min="${A.iso(A.REF)}"></div>
+        <div class="field"><label for="du-exp">Fecha de caducidad <span class="muted" style="font-weight:400">(si aplica)</span></label><input class="input" type="date" id="du-exp" name="expiry" min="${A.iso(A.TODAY)}"></div>
       </div>`,
       onOpen: form => { form.elements.file.addEventListener('change', () => { const file = form.elements.file.files[0]; if (file && !form.elements.name.value) form.elements.name.value = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' '); }); },
       onSubmit: form => {
@@ -417,7 +417,7 @@
         html: `<p>${ms.length} ${ms.length === 1 ? 'obra' : 'obras'} · avance medio ${f.pct(ms.reduce((s, x) => s + x.o.progress, 0) / ms.length)} · ${ms.filter(x => x.m.status !== 'plazo').length} con desfase de plazo.</p>
           <h3>Resumen por obra</h3><table class="dtable"><thead><tr>${head.map((h, i) => `<th${i ? ' class="r"' : ''}>${h}</th>`).join('')}</tr></thead><tbody>${ms.map(({ o, m }) => `<tr><td><strong>${esc(o.name)}</strong><br><small class="muted">${esc(o.town)} · ${esc(A.empById(o.jefe).short)}</small></td><td class="r">${o.progress} %</td><td class="r">${f.pct(m.planned)}</td><td class="r">${m.statusLabel}</td><td class="r">${f.signedPct(m.devPct)}</td><td class="r">${m.open.length}</td><td class="r">${f.dayMed(o.end)}</td></tr>`).join('')}</tbody></table>
           <h3>Observaciones</h3><ul>${ms.filter(x => x.m.open.length).map(({ o, m }) => `<li><strong>${esc(o.short)}:</strong> ${m.open.slice(0, 2).map(i => `${i.id} ${esc(i.title.charAt(0).toLowerCase() + i.title.slice(1))}`).join('; ')}.</li>`).join('') || '<li>Sin incidencias abiertas.</li>'}</ul>`,
-        csv: { name: `informe-obras_${A.iso(A.REF)}.csv`, head: ['Obra', 'Municipio', 'Jefe de obra', 'Avance (%)', 'Previsto (%)', 'Estado', 'Desviación coste (%)', 'Incidencias abiertas', 'Fin previsto'], rows: ms.map(({ o, m }) => [o.name, o.town, A.empById(o.jefe).name, o.progress, U.csvNum(m.planned, 1), m.statusLabel, U.csvNum(m.devPct, 2), m.open.length, A.iso(o.end)]) }
+        csv: { name: `informe-obras_${A.iso(A.TODAY)}.csv`, head: ['Obra', 'Municipio', 'Jefe de obra', 'Avance (%)', 'Previsto (%)', 'Estado', 'Desviación coste (%)', 'Incidencias abiertas', 'Fin previsto'], rows: ms.map(({ o, m }) => [o.name, o.town, A.empById(o.jefe).name, o.progress, U.csvNum(m.planned, 1), m.statusLabel, U.csvNum(m.devPct, 2), m.open.length, A.iso(o.end)]) }
       };
     }
     if (tipo === 'fichajes') {
@@ -432,8 +432,8 @@
       return {
         title: 'Horas y fichajes · últimos 5 días laborables',
         html: `<p>Del ${f.dayMed(days[0])} al ${f.dayMed(days[4])}: <strong>${f.hours(total)}</strong> en jornadas cerradas de ${A.EMPLEADOS.length} personas (la jornada en curso se suma al fichar la salida). ${rows.filter(r => r.rev).length} personas tienen fichajes pendientes de revisión.</p>
-          <h3>Detalle por persona</h3><table class="dtable"><thead><tr><th>Persona</th>${days.map(d => `<th class="r">${f.cap(f.weekdayShort(d))}</th>`).join('')}<th class="r">Total</th><th class="r">Incid.</th></tr></thead><tbody>${rows.map(r => `<tr><td><strong>${esc(r.e.short)}</strong><br><small class="muted">${esc(r.e.role)}</small></td>${r.recs.map(rc => `<td class="r">${!rc ? '—' : rc.status === 'ausencia' ? '<span class="muted">Aus.</span>' : A.hoursOf(rc) != null ? f.num(A.hoursOf(rc), 1) : rc.in ? (A.sameDay(rc.date, A.REF) ? '<span class="muted">En curso</span>' : '<span style="color:var(--warn-ink)">Sin salida</span>') : '<span style="color:var(--danger-ink)">Sin fichar</span>'}</td>`).join('')}<td class="r"><strong>${f.num(r.hours, 1)}</strong></td><td class="r">${r.rev || ''}</td></tr>`).join('')}</tbody></table>`,
-        csv: { name: `informe-fichajes_${A.iso(A.REF)}.csv`, head: ['Persona', 'Puesto'].concat(days.map(d => A.iso(d))).concat(['Total horas', 'Ausencias', 'Fichajes por revisar']), rows: rows.map(r => [r.e.name, r.e.role].concat(r.recs.map(rc => !rc ? '' : rc.status === 'ausencia' ? 'Ausencia' : A.hoursOf(rc) != null ? U.csvNum(A.hoursOf(rc), 2) : rc.in ? (A.sameDay(rc.date, A.REF) ? 'En curso' : 'Sin salida') : 'Sin fichar')).concat([U.csvNum(r.hours, 2), r.abs, r.rev])) }
+          <h3>Detalle por persona</h3><table class="dtable"><thead><tr><th>Persona</th>${days.map(d => `<th class="r">${f.cap(f.weekdayShort(d))}</th>`).join('')}<th class="r">Total</th><th class="r">Incid.</th></tr></thead><tbody>${rows.map(r => `<tr><td><strong>${esc(r.e.short)}</strong><br><small class="muted">${esc(r.e.role)}</small></td>${r.recs.map(rc => `<td class="r">${!rc ? '—' : rc.status === 'ausencia' ? '<span class="muted">Aus.</span>' : A.hoursOf(rc) != null ? f.num(A.hoursOf(rc), 1) : rc.in ? (A.isLive(rc.date) && rc.status !== 'pendiente' ? '<span class="muted">En curso</span>' : '<span style="color:var(--warn-ink)">Sin salida</span>') : '<span style="color:var(--danger-ink)">Sin fichar</span>'}</td>`).join('')}<td class="r"><strong>${f.num(r.hours, 1)}</strong></td><td class="r">${r.rev || ''}</td></tr>`).join('')}</tbody></table>`,
+        csv: { name: `informe-fichajes_${A.iso(A.TODAY)}.csv`, head: ['Persona', 'Puesto'].concat(days.map(d => A.iso(d))).concat(['Total horas', 'Ausencias', 'Fichajes por revisar']), rows: rows.map(r => [r.e.name, r.e.role].concat(r.recs.map(rc => !rc ? '' : rc.status === 'ausencia' ? 'Ausencia' : A.hoursOf(rc) != null ? U.csvNum(A.hoursOf(rc), 2) : rc.in ? (A.isLive(rc.date) && rc.status !== 'pendiente' ? 'En curso' : 'Sin salida') : 'Sin fichar')).concat([U.csvNum(r.hours, 2), r.abs, r.rev])) }
       };
     }
     if (tipo === 'incidencias') {
@@ -443,7 +443,7 @@
         title: 'Incidencias abiertas',
         html: `<p><strong>${open.length} incidencias abiertas</strong> · ${open.filter(i => i.priority === 'alta').length} de prioridad alta · antigüedad media ${f.num(open.reduce((s, i) => s + A.daysOpen(i), 0) / Math.max(1, open.length), 1)} días.</p>
           ${groups.map(o => `<h3>${esc(o.name)}</h3><table class="dtable"><thead><tr><th>Incidencia</th><th>Prioridad</th><th>Estado</th><th>Responsable</th><th class="r">Días</th></tr></thead><tbody>${open.filter(i => i.obra === o.id).map(i => `<tr><td><strong>${i.id}</strong> ${esc(i.title)}</td><td>${U.PRIO[i.priority]}</td><td>${U.STATUS.inc[i.status]}</td><td>${esc(U.personName(i.owner).replace(' (tú)', ''))}</td><td class="r">${A.daysOpen(i)}</td></tr>`).join('')}</tbody></table>`).join('') || '<p>No hay incidencias abiertas.</p>'}`,
-        csv: { name: `informe-incidencias_${A.iso(A.REF)}.csv`, head: ['ID', 'Obra', 'Título', 'Prioridad', 'Estado', 'Responsable', 'Días abierta'], rows: open.map(i => [i.id, A.obraById(i.obra).name, i.title, U.PRIO[i.priority], U.STATUS.inc[i.status], U.personName(i.owner).replace(' (tú)', ''), A.daysOpen(i)]) }
+        csv: { name: `informe-incidencias_${A.iso(A.TODAY)}.csv`, head: ['ID', 'Obra', 'Título', 'Prioridad', 'Estado', 'Responsable', 'Días abierta'], rows: open.map(i => [i.id, A.obraById(i.obra).name, i.title, U.PRIO[i.priority], U.STATUS.inc[i.status], U.personName(i.owner).replace(' (tú)', ''), A.daysOpen(i)]) }
       };
     }
     // económico
@@ -453,7 +453,7 @@
       html: `<p>Presupuesto ${f.eurM(t.budget)} · coste ejecutado ${f.eurM(t.ac)} · previsión al cierre ${f.eurM(t.eac)} (<strong>${f.signedPct(t.devPct)}</strong>, ${f.signedEur(t.dev)}).</p>
         <h3>Por obra</h3><table class="dtable"><thead><tr><th>Obra</th><th class="r">Presupuesto</th><th class="r">Coste ejecutado</th><th class="r">Avance</th><th class="r">Previsión</th><th class="r">Desviación</th></tr></thead><tbody>${ms.map(({ o, m }) => `<tr><td>${esc(o.name)}</td><td class="r">${f.eur(o.budget)}</td><td class="r">${f.eur(m.ac)}</td><td class="r">${o.progress} %</td><td class="r">${f.eur(Math.round(m.eac))}</td><td class="r">${f.signedPct(m.devPct)}</td></tr>`).join('')}</tbody></table>
         <h3>Evolución mensual</h3><table class="dtable"><thead><tr><th>Mes</th><th class="r">Planificado</th><th class="r">Real</th><th class="r">Diferencia</th></tr></thead><tbody>${months.map(x => `<tr><td>${f.cap(f.monthLong(x.month))} ${x.month.getFullYear()}${x.current ? ' (en curso)' : ''}</td><td class="r">${f.eur(Math.round(x.planned))}</td><td class="r">${f.eur(Math.round(x.actual))}</td><td class="r">${f.signedPct((x.actual - x.planned) / x.planned * 100)}</td></tr>`).join('')}</tbody></table>`,
-      csv: { name: `informe-economico_${A.iso(A.REF)}.csv`, head: ['Obra', 'Presupuesto (€)', 'Coste ejecutado (€)', 'Avance (%)', 'Previsión al cierre (€)', 'Desviación (%)'], rows: ms.map(({ o, m }) => [o.name, U.csvNum(o.budget, 0), U.csvNum(m.ac, 0), o.progress, U.csvNum(m.eac, 0), U.csvNum(m.devPct, 2)]) }
+      csv: { name: `informe-economico_${A.iso(A.TODAY)}.csv`, head: ['Obra', 'Presupuesto (€)', 'Coste ejecutado (€)', 'Avance (%)', 'Previsión al cierre (€)', 'Desviación (%)'], rows: ms.map(({ o, m }) => [o.name, U.csvNum(o.budget, 0), U.csvNum(m.ac, 0), o.progress, U.csvNum(m.eac, 0), U.csvNum(m.devPct, 2)]) }
     };
   }
   function renderInformes(route) {
