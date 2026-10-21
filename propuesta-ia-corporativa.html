@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive, noimageindex">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0E1628">
+<title>Propuesta de IA · Adolfo Pérez Construcciones</title>
+<meta name="description" content="Propuesta de ADVENTUM Strategy para Adolfo Pérez Construcciones.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_ES">
+<meta property="og:site_name" content="ADVENTUM Strategy">
+<meta property="og:title" content="La mejor IA, en manos de todo vuestro equipo">
+<meta property="og:description" content="Propuesta de ADVENTUM Strategy para Adolfo Pérez Construcciones">
+<meta property="og:url" content="https://adolfo-perez.adventumstrategy.es/propuesta-ia-corporativa">
+<meta property="og:image" content="https://adolfo-perez.adventumstrategy.es/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Portada de la propuesta: La mejor IA, en manos de todo vuestro equipo">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 169 150'%3E%3Cg transform='scale%280.3185%29 translate%28-235 -109%29'%3E%3Cpath d='M300 560 L500 120 L700 560' fill='none' stroke='%23173b78' stroke-width='22' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M300 560 C288 572 265 575 235 575 L315 575' fill='none' stroke='%23173b78' stroke-width='10' stroke-linecap='round'/%3E%3Cpath d='M700 560 C712 572 735 575 765 575 L685 575' fill='none' stroke='%23173b78' stroke-width='10' stroke-linecap='round'/%3E%3Cpath d='M445 575 A55 55 0 0 1 555 575 Z' fill='%23E0A20A'/%3E%3Cg fill='none' stroke='%23E0A20A' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M485 575 L485 360'/%3E%3Cpath d='M500 575 L500 240'/%3E%3Cpath d='M515 575 L515 360'/%3E%3Cpath d='M485 500 C470 470 440 455 410 430'/%3E%3Cpath d='M485 450 C460 425 430 395 405 365'/%3E%3Cpath d='M485 400 C465 375 450 340 440 305'/%3E%3Cpath d='M500 335 C480 310 470 280 470 250'/%3E%3Cpath d='M515 500 C530 470 560 455 590 430'/%3E%3Cpath d='M515 450 C540 425 570 395 595 365'/%3E%3Cpath d='M515 400 C535 375 550 340 560 305'/%3E%3Cpath d='M500 335 C520 310 530 280 530 250'/%3E%3C/g%3E%3Cg fill='%23E0A20A'%3E%3Ccircle cx='500' cy='225' r='10'/%3E%3Ccircle cx='470' cy='250' r='9'/%3E%3Ccircle cx='530' cy='250' r='9'/%3E%3Ccircle cx='440' cy='305' r='9'/%3E%3Ccircle cx='560' cy='305' r='9'/%3E%3Ccircle cx='405' cy='365' r='9'/%3E%3Ccircle cx='595' cy='365' r='9'/%3E%3Ccircle cx='410' cy='430' r='9'/%3E%3Ccircle cx='590' cy='430' r='9'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0E1628;
+  --ink:#F5F1E8;
+  --muted:rgba(245,241,232,.7);
+  --accent:#B9A1BB;
+  --gold:#C9A96E;
+  --pill:rgba(8,13,25,.8);
+  --line:rgba(245,241,232,.16);
+  --paper:#F3EFE7;
+  --gap:clamp(8px,2.6vmin,32px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);
+  font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit}
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* Presentación: una diapositiva a pantalla */
+body.present{position:fixed;inset:0;overflow:hidden}
+.stage{position:fixed;inset:0;display:grid;place-items:center;padding:var(--gap);
+  touch-action:pan-y pinch-zoom;user-select:none;-webkit-user-select:none;cursor:pointer}
+.frame{position:relative;aspect-ratio:16/9;
+  width:min(calc(100vw - 2 * var(--gap)), calc((100vh - 2 * var(--gap)) * 16 / 9));
+  border-radius:6px;overflow:hidden;background:var(--paper);
+  box-shadow:0 22px 70px rgba(0,0,0,.5),0 2px 8px rgba(0,0,0,.3)}
+@supports (height:100dvh){
+  .frame{width:min(calc(100vw - 2 * var(--gap)), calc((100dvh - 2 * var(--gap)) * 16 / 9))}
+}
+.frame img{position:absolute;inset:0;width:100%;height:100%;display:block;-webkit-user-drag:none}
+body.fs{--gap:0px}
+body.fs .frame{border-radius:0;box-shadow:none}
+
+.nav{position:fixed;top:50%;z-index:3;width:48px;height:48px;margin-top:-24px;border-radius:50%;
+  display:grid;place-items:center;border:1px solid var(--line);background:var(--pill);cursor:pointer;
+  opacity:0;transition:opacity .25s ease,background-color .2s ease}
+.nav.prev{left:16px}
+.nav.next{right:16px}
+body.ui .nav{opacity:1}
+.nav:hover{background:rgba(8,13,25,.95)}
+.nav:disabled{opacity:0!important;pointer-events:none}
+.nav svg{width:22px;height:22px}
+
+.hud{position:fixed;z-index:3;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));
+  display:flex;align-items:center;gap:2px;padding:4px 4px 4px 14px;border-radius:999px;
+  background:var(--pill);border:1px solid var(--line);color:var(--muted);
+  font-size:13px;font-variant-numeric:tabular-nums;transition:opacity .25s ease}
+.hud b{color:var(--ink);font-weight:600}
+.hud .count{padding-right:10px}
+.hud button{width:34px;height:34px;border:0;border-radius:50%;background:transparent;display:grid;place-items:center;cursor:pointer}
+.hud button:hover{background:rgba(245,241,232,.1)}
+.hud svg{width:18px;height:18px}
+body.idle .hud{opacity:0}
+body.idle .stage{cursor:none}
+
+.progress{position:fixed;left:0;right:0;bottom:0;z-index:2;height:3px;background:rgba(245,241,232,.08)}
+.progress span{display:block;height:100%;width:0;background:var(--accent);transition:width .25s ease}
+
+@media (hover:none),(pointer:coarse){
+  .nav{display:none}
+}
+
+/* Lectura: móvil en vertical, diapositivas en columna */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:calc(10px + env(safe-area-inset-top)) 16px 14px;font-size:13px;color:var(--muted);
+  background:linear-gradient(#0E1628 55%,rgba(14,22,40,0))}
+.topbar .brand{flex:none;letter-spacing:.14em;text-transform:uppercase;font-size:11px;color:var(--gold);font-weight:600;white-space:nowrap}
+.topbar .rot{display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap}
+.topbar .rot span{overflow:hidden;text-overflow:ellipsis}
+.topbar svg{flex:none;width:16px;height:16px}
+.reader{max-width:1100px;margin:0 auto;display:grid;gap:14px;
+  padding:calc(52px + env(safe-area-inset-top)) 12px calc(72px + env(safe-area-inset-bottom))}
+.card{margin:0;position:relative;aspect-ratio:16/9;border-radius:6px;overflow:hidden;background:#18233D;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);scroll-margin-top:calc(52px + env(safe-area-inset-top))}
+.card img{width:100%;height:100%;display:block;opacity:0;transition:opacity .25s ease}
+.card img.on{opacity:1}
+
+/* Estados */
+.loading,.msg{position:fixed;inset:0;z-index:6;display:grid;place-items:center;padding:24px;text-align:center}
+.loading{color:var(--muted);font-size:14px;pointer-events:none}
+.spin{width:28px;height:28px;margin:0 auto 12px;border-radius:50%;border:2px solid rgba(245,241,232,.18);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.msg>div{max-width:440px}
+.msg .brand{display:block;margin-bottom:18px;letter-spacing:.18em;text-transform:uppercase;font-size:12px;font-weight:600;color:var(--gold)}
+.msg h1{margin:0 0 10px;font-size:22px;line-height:1.3;font-weight:600}
+.msg p{margin:0 0 8px;color:var(--muted)}
+.msg a{color:var(--ink)}
+.msg button{margin-top:14px;padding:10px 18px;border-radius:999px;border:1px solid var(--line);background:var(--pill);cursor:pointer}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+<noscript><div class="msg"><div><span class="brand">ADVENTUM Strategy</span><h1>Activa JavaScript</h1><p>Hace falta para ver la propuesta.</p></div></div></noscript>
+
+<header id="topbar" class="topbar" hidden>
+  <span class="brand">Propuesta</span>
+  <span class="rot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M20.5 13.5a8.5 8.5 0 0 1-6 6.5"/><path d="M15.5 21.5l-1-1.5 1.8-.8"/></svg><span>Gira el móvil para verla en grande</span></span>
+</header>
+
+<main>
+  <div id="stage" class="stage" hidden>
+    <div class="frame"><img id="slide" alt="" draggable="false"></div>
+  </div>
+  <div id="reader" class="reader" hidden></div>
+</main>
+
+<button id="prev" class="nav prev" type="button" aria-label="Diapositiva anterior" hidden>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+</button>
+<button id="next" class="nav next" type="button" aria-label="Diapositiva siguiente" hidden>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+</button>
+
+<div id="hud" class="hud" hidden>
+  <span class="count" aria-hidden="true"><b id="num">1</b> / 18</span>
+  <button id="fs" type="button" aria-label="Pantalla completa" title="Pantalla completa (F)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+  </button>
+</div>
+<div id="progress" class="progress" hidden><span></span></div>
+<p id="live" class="sr-only" aria-live="polite"></p>
+
+<div id="loading" class="loading"><div><div class="spin"></div>Cargando la propuesta…</div></div>
+<div id="msg" class="msg" role="alert" hidden><div>
+  <span class="brand">ADVENTUM Strategy</span>
+  <h1 id="msg-title"></h1>
+  <p id="msg-text"></p>
+  <p>¿Necesitas ayuda? <a href="mailto:tomas@adventumstrategy.es">tomas@adventumstrategy.es</a></p>
+  <button id="retry" type="button" hidden>Reintentar</button>
+</div></div>
+
+<script>
+(() => {
+  'use strict';
+  const N = 18;
+  const $ = (id) => document.getElementById(id);
+  const body = document.body;
+  const stage = $('stage'), img = $('slide'), reader = $('reader'), topbar = $('topbar');
+  const prevBtn = $('prev'), nextBtn = $('next'), hud = $('hud'), num = $('num'), fsBtn = $('fs');
+  const progress = $('progress'), bar = progress.firstElementChild, live = $('live');
+  const loading = $('loading'), msg = $('msg');
+
+  const hp = new URLSearchParams(location.hash.slice(1));
+  const k = hp.get('k') || '';
+  let cur = Math.min(Math.max((parseInt(hp.get('s'), 10) || 1) - 1, 0), N - 1);
+  let key = null, mode = null, token = 0;
+  const cache = new Map();
+
+  const file = (i) => '/d' + String(i + 1).padStart(2, '0') + '.bin';
+
+  function fromB64u(s) {
+    s = s.replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    const bin = atob(s), out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  const TEXTS = {
+    key: ['Abre el enlace completo', 'Para ver la propuesta, abre el enlace completo que os hemos enviado.'],
+    browser: ['Prueba con otro navegador', 'Este navegador no puede abrir la propuesta. Ábrela con Chrome, Safari o Edge actualizados.'],
+    net: ['No se ha podido cargar', 'Revisa la conexión y vuelve a intentarlo.']
+  };
+  function fail(kind) {
+    token++;
+    loading.hidden = true;
+    stage.hidden = true; reader.hidden = true; topbar.hidden = true;
+    hud.hidden = true; progress.hidden = true; prevBtn.hidden = true; nextBtn.hidden = true;
+    $('msg-title').textContent = TEXTS[kind][0];
+    $('msg-text').textContent = TEXTS[kind][1];
+    $('retry').hidden = kind !== 'net';
+    msg.hidden = false;
+  }
+  const kindOf = (e) => (e && e.name === 'OperationError') ? 'key' : 'net';
+  $('retry').addEventListener('click', () => location.reload());
+
+  function load(i) {
+    if (i < 0 || i >= N) return Promise.resolve(null);
+    if (!cache.has(i)) {
+      const p = fetch(file(i))
+        .then((r) => { if (!r.ok) throw new Error('net'); return r.arrayBuffer(); })
+        .then((b) => crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(b, 0, 12) }, key, new Uint8Array(b, 12)))
+        .then((pt) => URL.createObjectURL(new Blob([pt], { type: 'image/jpeg' })));
+      p.catch(() => cache.delete(i));
+      cache.set(i, p);
+    }
+    return cache.get(i);
+  }
+  const warm = (i) => { load(i).catch(() => {}); };
+
+  function setHash() {
+    try { history.replaceState(null, '', '#k=' + k + '&s=' + (cur + 1)); } catch (_) {}
+  }
+  function updateHud() {
+    num.textContent = String(cur + 1);
+    bar.style.width = ((cur + 1) / N * 100) + '%';
+    prevBtn.disabled = cur === 0;
+    nextBtn.disabled = cur === N - 1;
+    live.textContent = 'Diapositiva ' + (cur + 1) + ' de ' + N;
+  }
+
+  async function show(i) {
+    cur = Math.min(Math.max(i, 0), N - 1);
+    setHash(); updateHud();
+    const t = ++token;
+    let url;
+    try { url = await load(cur); } catch (e) { return fail(kindOf(e)); }
+    if (t !== token || mode !== 'present') return;
+    const pre = new Image();
+    pre.src = url;
+    try { await pre.decode(); } catch (_) {}
+    if (t !== token || mode !== 'present') return;
+    img.src = url;
+    img.alt = 'Diapositiva ' + (cur + 1) + ' de ' + N;
+    loading.hidden = true;
+    wake();
+    warm(cur + 1); warm(cur + 2); warm(cur - 1);
+  }
+  const next = () => { if (cur < N - 1) show(cur + 1); };
+  const prev = () => { if (cur > 0) show(cur - 1); };
+  prevBtn.addEventListener('click', () => { prev(); wake(); });
+  nextBtn.addEventListener('click', () => { next(); wake(); });
+
+  document.addEventListener('keydown', (e) => {
+    if (mode !== 'present' || e.altKey || e.ctrlKey || e.metaKey) return;
+    if ((e.key === ' ' || e.key === 'Enter') && e.target.closest && e.target.closest('button')) return;
+    switch (e.key) {
+      case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ': case 'Enter':
+        e.preventDefault(); next(); break;
+      case 'ArrowLeft': case 'ArrowUp': case 'PageUp': case 'Backspace':
+        e.preventDefault(); prev(); break;
+      case 'Home': e.preventDefault(); show(0); break;
+      case 'End': e.preventDefault(); show(N - 1); break;
+      case 'f': case 'F': toggleFs(); break;
+      default: return;
+    }
+    wake();
+  });
+
+  let down = null;
+  stage.addEventListener('pointerdown', (e) => {
+    if (!e.isPrimary || e.button > 0) return;
+    down = { x: e.clientX, y: e.clientY };
+  });
+  stage.addEventListener('pointerup', (e) => {
+    if (!down || !e.isPrimary) return;
+    const dx = e.clientX - down.x, dy = e.clientY - down.y;
+    down = null;
+    if (window.visualViewport && visualViewport.scale > 1.05) return;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) { if (dx < 0) next(); else prev(); return; }
+    if (Math.abs(dx) < 12 && Math.abs(dy) < 12) { if (e.clientX < window.innerWidth * 0.3) prev(); else next(); }
+  });
+  stage.addEventListener('pointercancel', () => { down = null; });
+
+  let idleT = 0;
+  function wake() {
+    body.classList.add('ui');
+    body.classList.remove('idle');
+    clearTimeout(idleT);
+    if (mode !== 'present') return;
+    idleT = setTimeout(() => {
+      if (hud.matches(':hover') || prevBtn.matches(':hover') || nextBtn.matches(':hover')) return wake();
+      body.classList.remove('ui');
+      body.classList.add('idle');
+    }, 2600);
+  }
+  document.addEventListener('mousemove', wake, { passive: true });
+
+  const root = document.documentElement;
+  const canFs = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  const fsOn = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  function toggleFs() {
+    if (!canFs) return;
+    let r;
+    if (fsOn()) r = (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else r = (root.requestFullscreen || root.webkitRequestFullscreen).call(root);
+    if (r && r.catch) r.catch(() => {});
+  }
+  if (!canFs) fsBtn.hidden = true;
+  fsBtn.addEventListener('click', () => { toggleFs(); wake(); });
+  ['fullscreenchange', 'webkitfullscreenchange'].forEach((ev) =>
+    document.addEventListener(ev, () => body.classList.toggle('fs', fsOn())));
+
+  let built = false;
+  function buildReader() {
+    if (!built) {
+      built = true;
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < N; i++) {
+        const f = document.createElement('figure');
+        f.className = 'card';
+        f.dataset.i = String(i);
+        const im = document.createElement('img');
+        im.alt = 'Diapositiva ' + (i + 1) + ' de ' + N;
+        im.decoding = 'async';
+        im.addEventListener('load', () => im.classList.add('on'));
+        f.appendChild(im);
+        frag.appendChild(f);
+      }
+      reader.appendChild(frag);
+      const cards = Array.prototype.slice.call(reader.children);
+      const ioLoad = new IntersectionObserver((entries) => {
+        entries.forEach((en) => {
+          if (!en.isIntersecting) return;
+          ioLoad.unobserve(en.target);
+          const i = +en.target.dataset.i;
+          load(i).then((url) => { en.target.firstChild.src = url; }).catch((e) => fail(kindOf(e)));
+        });
+      }, { rootMargin: '100% 0px' });
+      cards.forEach((c) => ioLoad.observe(c));
+      window.addEventListener('scroll', trackReader, { passive: true });
+    }
+    loading.hidden = true;
+    const target = reader.children[cur];
+    requestAnimationFrame(() => {
+      if (target && cur > 0) target.scrollIntoView({ block: 'start' });
+      trackReader();
+    });
+  }
+
+  // En lectura, la diapositiva actual es la más cercana al primer tercio de la pantalla
+  let tracking = false;
+  function trackReader() {
+    if (tracking) return;
+    tracking = true;
+    requestAnimationFrame(() => {
+      tracking = false;
+      if (mode !== 'read') return;
+      const doc = document.documentElement;
+      let best = 0;
+      if (window.scrollY + window.innerHeight >= doc.scrollHeight - 4) best = N - 1;
+      else if (window.scrollY > 4) {
+        const ref = window.innerHeight * 0.3;
+        let bestD = Infinity;
+        for (let i = 0; i < reader.children.length; i++) {
+          const r = reader.children[i].getBoundingClientRect();
+          const d = Math.abs((r.top + r.bottom) / 2 - ref);
+          if (d < bestD) { bestD = d; best = i; }
+        }
+      }
+      if (best !== cur) { cur = best; setHash(); updateHud(); }
+    });
+  }
+
+  const portrait = window.matchMedia('(orientation: portrait) and (max-width: 900px)');
+  function setMode() {
+    const m = portrait.matches ? 'read' : 'present';
+    if (m === mode) return;
+    mode = m;
+    body.classList.toggle('present', m === 'present');
+    body.classList.toggle('read', m === 'read');
+    body.classList.remove('idle');
+    stage.hidden = m !== 'present';
+    reader.hidden = m !== 'read';
+    topbar.hidden = m !== 'read';
+    prevBtn.hidden = nextBtn.hidden = m !== 'present';
+    hud.hidden = false;
+    progress.hidden = false;
+    fsBtn.hidden = !canFs || m !== 'present';
+    updateHud();
+    if (m === 'present') { window.scrollTo(0, 0); show(cur); wake(); }
+    else buildReader();
+  }
+  if (portrait.addEventListener) portrait.addEventListener('change', setMode);
+  else if (portrait.addListener) portrait.addListener(setMode);
+
+  async function init() {
+    if (!k) return fail('key');
+    if (!(window.crypto && crypto.subtle && window.fetch && window.URLSearchParams)) return fail('browser');
+    try { key = await crypto.subtle.importKey('raw', fromB64u(k), { name: 'AES-GCM' }, false, ['decrypt']); }
+    catch (_) { return fail('key'); }
+    try { await load(cur); } catch (e) { return fail(kindOf(e)); }
+    setMode();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
