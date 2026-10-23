@@ -168,9 +168,16 @@ body.idle .stage{cursor:none}
   const progress = $('progress'), bar = progress.firstElementChild, live = $('live');
   const loading = $('loading'), msg = $('msg');
 
+  // El enlace solo lleva la clave. La diapositiva actual se guarda en la pestaña
+  // (sobrevive a una recarga), así que un enlace copiado siempre abre en la portada.
   const hp = new URLSearchParams(location.hash.slice(1));
   const k = hp.get('k') || '';
-  let cur = Math.min(Math.max((parseInt(hp.get('s'), 10) || 1) - 1, 0), N - 1);
+  const SKEY = 'apc-slide';
+  let cur = 0;
+  try {
+    const v = parseInt(sessionStorage.getItem(SKEY), 10);
+    if (v >= 1 && v <= N) cur = v - 1;
+  } catch (_) {}
   let key = null, mode = null, token = 0;
   const cache = new Map();
 
@@ -217,7 +224,8 @@ body.idle .stage{cursor:none}
   const warm = (i) => { load(i).catch(() => {}); };
 
   function setHash() {
-    try { history.replaceState(null, '', '#k=' + k + '&s=' + (cur + 1)); } catch (_) {}
+    try { if (location.hash !== '#k=' + k) history.replaceState(null, '', '#k=' + k); } catch (_) {}
+    try { sessionStorage.setItem(SKEY, String(cur + 1)); } catch (_) {}
   }
   function updateHud() {
     num.textContent = String(cur + 1);
